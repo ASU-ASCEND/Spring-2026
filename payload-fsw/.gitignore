@@ -1,0 +1,26 @@
+# PlatformIO
+.pio
+.pioenvs
+.piolibdeps
+
+# Visual Studio Code
+.vscode/
+.vscode/*.json
+.vscode/*.db*
+.vscode/ipch/
+.vscode/*.log
+
+# macOS specific
+.DS_Store
+
+# Windows specific
+Thumbs.db
+Desktop.ini
+
+# User-specific settings
+*.code-workspace
+
+# Build results
+build/
+temp/
+*.log
