@@ -75,7 +75,7 @@ class ErrorDisplay {
     if (xSemaphoreTake(error_display_mutex, ERROR_MUTEX_DELAY) == pdTRUE) {
       has_mutex = true;
     } else {
-      log_core_error("Bypassing ErrorDisplay mutex");
+      log_task_error("Bypassing ErrorDisplay mutex");
     }
 
     if (e < this->code) {
@@ -96,7 +96,7 @@ class ErrorDisplay {
     if (xSemaphoreTake(error_display_mutex, ERROR_MUTEX_DELAY) == pdTRUE) {
       has_mutex = true;
     } else {
-      log_core_error("Bypassing ErrorDisplay mutex");
+      log_task_error("Bypassing ErrorDisplay mutex");
     }
 
     this->pin_level = !(this->pin_level);

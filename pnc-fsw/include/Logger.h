@@ -6,12 +6,12 @@
 
 #include "task.h"
 
-static inline void log_core(String str) {
+static inline void log_task(String str) {
   char* task_name = pcTaskGetName(NULL);
   Serial.print("[" + String(task_name) + "] " + str + "\n");
 }
 
-static inline void log_core_error(String str) {
+static inline void log_task_error(String str) {
   char* task_name = pcTaskGetName(NULL);
   Serial.print("[ERROR - " + String(task_name) + "] " + str + "\n");
 }

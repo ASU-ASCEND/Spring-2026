@@ -5,4 +5,7 @@
 #define ERROR_1_PIN 21
 #define ERROR_2_PIN 22
 
+// max resolution for the rp2350's ADC
+#define PICO_TEMP_ADC_RES 12
+
 #endif
