@@ -1,0 +1,3 @@
+[submodule "payload-fsw/lib/DFRobot_OzoneSensor"]
+	path = payload-fsw/lib/DFRobot_OzoneSensor
+	url = https://github.com/DFRobot/DFRobot_OzoneSensor.git
