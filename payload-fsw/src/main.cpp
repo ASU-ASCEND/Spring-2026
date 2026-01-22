@@ -10,9 +10,6 @@
 #include "Logger.h"
 #include "PayloadConfig.h"
 
-// Shared stuctures indicating command-based system status
-#include "CommandMessage.h"
-
 // parent classes
 #include "Sensor.h"
 
@@ -22,8 +19,6 @@
 #include "BMP390Sensor.h"
 #include "ENS160Sensor.h"
 #include "ICM20948Sensor.h"
-#include "INA260Sensor.h"
-#include "MTK3339Sensor.h"
 #include "OzoneSensor.h"
 #include "PCF8523Sensor.h"
 #include "SHTC3Sensor.h"
@@ -44,9 +39,7 @@ void handleDataInterface();
 // sensor classes
 // clang-format off
 // class        sensor            minimum period in ms
-INA260Sensor    ina260_sensor     (1000);
 TempSensor      temp_sensor       (1000);
-MTK3339Sensor   gps_sensor        (2000);
 ICM20948Sensor  icm_sensor        (0);
 PCF8523Sensor   rtc_sensor        (1000);
 TMP11xSensor    tmp_sensor        (500,   &STRATOCORE_I2C); 
@@ -62,11 +55,10 @@ AnalogTemp      analog_temp_out   (500);
 // clang-format on
 
 // sensor array
-Sensor* sensors[] = {&ina260_sensor,  &temp_sensor,       &gps_sensor,
-                     &icm_sensor,     &rtc_sensor,        &tmp_sensor,
-                     &uv_sensor_out,  &ens160_sensor_out, &bmp_sensor_out,
-                     &tmp_sensor_out, &shtc3_sensor_out,  &ozone_sensor_out,
-                     &analog_temp_out};
+Sensor* sensors[] = {&temp_sensor,      &icm_sensor,     &rtc_sensor,
+                     &tmp_sensor,       &uv_sensor_out,  &ens160_sensor_out,
+                     &bmp_sensor_out,   &tmp_sensor_out, &shtc3_sensor_out,
+                     &ozone_sensor_out, &analog_temp_out};
 
 const int sensors_len = sizeof(sensors) / sizeof(sensors[0]);
 
@@ -90,7 +82,6 @@ uint32_t max_pause_duration = 60'000 * 2;
 void setup() {
   // multicore setup
   queue_init(&qt, QT_ENTRY_SIZE, QT_MAX_SIZE);
-  mutex_init(&cmd_data_mutex);
   ErrorDisplay::instance().addCode(Error::NONE);  // for safety
 
   pinMode(BAD_I2C0_SDA_PIN, INPUT);
@@ -110,7 +101,7 @@ void setup() {
   // start serial
   Serial.begin(115200);
   // while (!Serial)  // remove before flight
-  //   ;
+  //
   log_core("setup begin");
 
   // setup heartbeat pins
@@ -158,46 +149,27 @@ void loop() {
   it++;
   digitalWrite(HEARTBEAT_PIN_0, (it & 0x1));
 
-  // Check for serial input commands
-  if (Serial.available() > 0) {
-    handleCommand();
-  }
+  // start print line with iteration number
+  log_core("it: " + String(it) + "\t");
 
-  // Check if system is paused & skip data collection if so
+  // build csv row
+  uint8_t packet[QT_ENTRY_SIZE];
+  // for (int i = 0; i < QT_ENTRY_SIZE; i++) packet[i] = 0; // useful for
+  // debugging
+  uint16_t packet_len = readSensorDataPacket(packet);
 
-  if (getCmdData().system_paused) {
-    uint32_t remaining_time = millis() - time_paused;
+  String data_str = decodePacket(packet);
+  log_core("Data: " + data_str);
 
-    // Force resume if timeout
-    if (remaining_time > max_pause_duration) {
-      setCmdData({CMD_NONE, 0, false});
-      log_core("ERROR: System Timeout");
-    }
-  }
-  // Read sensor data
-  else {
-    // start print line with iteration number
-    log_core("it: " + String(it) + "\t");
+  // print csv row
+  // log_data(csv_row);
+  log_data_raw(packet, packet_len);
 
-    // build csv row
-    uint8_t packet[QT_ENTRY_SIZE];
-    // for (int i = 0; i < QT_ENTRY_SIZE; i++) packet[i] = 0; // useful for
-    // debugging
-    uint16_t packet_len = readSensorDataPacket(packet);
+  // send data to core1
+  // queue_add_blocking(&qt, packet);
+  queue_try_add(&qt, packet);
 
-    String data_str = decodePacket(packet);
-    log_core("Data: " + data_str);
-
-    // print csv row
-    // log_data(csv_row);
-    log_data_raw(packet, packet_len);
-
-    // send data to core1
-    // queue_add_blocking(&qt, packet);
-    queue_try_add(&qt, packet);
-
-    delay(500);  // remove before flight
-  }
+  delay(500);  // remove before flight
 
   digitalWrite(ON_BOARD_LED_PIN, (it & 0x1));  // toggle light with iteration
 }
@@ -226,66 +198,6 @@ int verifySensorRecovery() {
   }
   log_core("");
   return count;
-}
-
-/**
- * @brief Handle commands read from serial input
- *
- * Pause data collection and storage for a specified duration to execute
- * a command, including STATUS, DOWNLOAD, DELETE, etc.
- *
- */
-void handleCommand() {
-  // Fetch & format command
-  String cmd = Serial.readStringUntil('\n');
-  cmd.trim();
-  cmd.toUpperCase();
-
-  CommandMessage cmd_data = getCmdData();
-
-  // Process the command
-  if (cmd.equals("STATUS")) {
-    cmd_data.type = CMD_STATUS;
-    log_core("Command: " + cmd + " - System Paused");
-    max_pause_duration = 60'000 / 2;
-  } else if (cmd.startsWith("DOWNLOAD F")) {
-    // Extract the file number from command
-    String extracted_num = cmd.substring(String("DOWNLOAD F").length());
-    extracted_num.trim();
-
-    log_core("Command [DOWNLOAD]: Download File " + extracted_num +
-             " - System Paused");
-
-    // Store the command info
-    cmd_data.type = CMD_DOWNLOAD;
-    cmd_data.file_number = extracted_num.toInt();
-
-    // Set pause duration
-    max_pause_duration = 60'000 * 30;
-  } else if (cmd.startsWith("DELETE F")) {
-    // Extract the file number from command
-    String extracted_num = cmd.substring(String("DELETE F").length());
-    extracted_num.trim();
-
-    log_core("Command [DELETE]: Delete File " + extracted_num +
-             " - System Paused");
-
-    // Store the command info
-    cmd_data.type = CMD_DELETE;
-    cmd_data.file_number = extracted_num.toInt();
-    max_pause_duration = 60'000 * 15;
-  } else if (cmd.equals("FLASH DELETE ALL")) {
-    cmd_data.type = CMD_ERASE_ALL;
-    max_pause_duration = 60'000 * 5;
-  } else {
-    log_core("ERROR: Invalid command - " + cmd);
-    return;
-  }
-
-  cmd_data.system_paused = true;
-  time_paused = millis();
-
-  setCmdData(cmd_data);
 }
 
 /**

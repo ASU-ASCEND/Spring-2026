@@ -11,26 +11,19 @@
 #include "PayloadConfig.h"
 #include "Storage.h"
 
-// Shared stuctures indicating command-based system status
-#include "CommandMessage.h"
-
 int verifyStorage();
 int verifyStorageRecovery();
 void storeData(String data);
 void storeDataPacket(uint8_t* packet);
 
 // include storage headers here
-#include "FlashStorage.h"
-#include "RadioStorage.h"
 #include "SDStorage.h"
 
 // storage classes
 SDStorage sd_storage;
-RadioStorage radio_storage;
-FlashStorage flash_storage;
 
 // storage array
-Storage* storages[] = {&sd_storage, &radio_storage, &flash_storage};
+Storage* storages[] = {&sd_storage};
 
 const int storages_len = sizeof(storages) / sizeof(storages[0]);
 
@@ -97,31 +90,6 @@ void real_loop1() {
 
     // store csv row
     storeDataPacket(received_data);
-  }
-
-  // Determine if a command has been received
-  CommandMessage cmd_data = getCmdData();
-  if (cmd_data.system_paused && queue_get_level(&qt) == 0) {
-    // while () delay(10); // Flush the queued data
-
-    // Execute the command
-    if (cmd_data.type == 1)
-      flash_storage.getStatus();
-    else if (cmd_data.type == 2)
-      flash_storage.downloadFile(cmd_data.file_number);
-    else if (cmd_data.type == 3)
-      flash_storage.removeFile(cmd_data.file_number);
-    else if (cmd_data.type == 4) {
-      flash_storage.erase();
-      flash_storage.reinitFlash();
-    } else
-      log_core("ERROR: Invalid command");
-
-    // Reset command meta data & resume processes
-    cmd_data.system_paused = false;
-    cmd_data.file_number = 0;
-    cmd_data.type = CMD_NONE;
-    setCmdData(cmd_data);
   }
 
   // Prevent a busy loop
