@@ -3,8 +3,19 @@
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
+#include <stdarg.h>
 
 #include "task.h"
+
+static inline size_t log_printf(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+
+  size_t res = Serial.printf(fmt, args);
+
+  va_end(args);
+  return res;
+}
 
 static inline void log_task(String str) {
   char* task_name = pcTaskGetName(NULL);

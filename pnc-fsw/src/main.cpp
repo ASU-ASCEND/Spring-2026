@@ -9,17 +9,36 @@
 #include "tasks/monitor.h"
 #include "tasks/watchdog.h"
 
+// sensors
+#include "drivers/PicoTempSensor.h"
+#include "drivers/Sensor.h"
+
+PicoTempSensor pico_temp_sensor;
+
+Sensor* sensors[] = {&pico_temp_sensor};
+size_t sensors_len = sizeof(sensors) / sizeof(sensors[0]);
+
+// declarations
+void sysvar_update();
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial);
+  while (!Serial) delay(100);
 
-  // global setups
-  // setup better adc res
-  analogReadResolution(PICO_TEMP_ADC_RES);
+  log_task("ASCEND PnC FSW")
+
+      // sensor setups
+      for (int i = 0; i < sensors_len; i++) {
+    log_task("Verifying " + sensors[i]->getSensorName() + "...");
+    if (sensors[i]->verify()) {
+      log_task("Success.");
+    } else {
+      log_task("Failure.");
+    }
+  }
 
   // start tasks
-  watchdog_task_init(); 
+  watchdog_task_init();
   monitor_task_init();
   can_task_init();
 
@@ -27,12 +46,18 @@ void setup() {
 }
 
 void loop() {
-
-  // update pico temp
-  float temp = analogReadTemp();
-  sysvar_set_pico_temp_c(temp);
-
-  log_task("Sending " + String(temp));
+  sysvar_update();
 
   delay(500);
+}
+
+void sysvar_update() {
+  // update pico temp
+  log_task("Starting SysVar Update...");
+
+  for (int i = 0; i < sensors_len; i++) {
+    sensors[i]->readToSysVar();
+  }
+
+  log_task("Done.");
 }
