@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 
-#include "Device.h"
 #include "Logger.h"
 
 /**
