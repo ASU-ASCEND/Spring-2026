@@ -22,7 +22,10 @@ TempSensor::TempSensor(unsigned long minium_period)
  * @return true always
  * @return false never
  */
-bool TempSensor::verify() { return true; }
+bool TempSensor::verify() { 
+  analogReadResolution(12); 
+  return true; 
+}
 
 /**
  * @brief Reads temperature data in Celsius
