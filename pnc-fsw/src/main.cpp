@@ -25,10 +25,10 @@ void setup() {
   Serial.begin(115200);
   while (!Serial) delay(100);
 
-  log_task("ASCEND PnC FSW")
+  log_task("ASCEND PnC FSW");
 
-      // sensor setups
-      for (int i = 0; i < sensors_len; i++) {
+  // sensor setups
+  for (int i = 0; i < sensors_len; i++) {
     log_task("Verifying " + sensors[i]->getSensorName() + "...");
     if (sensors[i]->verify()) {
       log_task("Success.");

@@ -22,9 +22,9 @@ TempSensor::TempSensor(unsigned long minium_period)
  * @return true always
  * @return false never
  */
-bool TempSensor::verify() { 
-  analogReadResolution(12); 
-  return true; 
+bool TempSensor::verify() {
+  analogReadResolution(12);
+  return true;
 }
 
 /**
