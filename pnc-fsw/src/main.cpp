@@ -11,11 +11,13 @@
 
 // sensors
 #include "drivers/PicoTempSensor.h"
+#include "drivers/RTCSensor.h"
 #include "drivers/Sensor.h"
 
 PicoTempSensor pico_temp_sensor;
+RTCSensor rtc_sensor; 
 
-Sensor* sensors[] = {&pico_temp_sensor};
+Sensor* sensors[] = {&pico_temp_sensor, &rtc_sensor};
 size_t sensors_len = sizeof(sensors) / sizeof(sensors[0]);
 
 // declarations
