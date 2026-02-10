@@ -15,6 +15,7 @@ bool BMESensor::verify()
 void BMESensor::readToSysVar()
 {
     BMESensorData sensor_data;
+    bme.performReading();
 
     sensor_data.BMETemp = bme.temperature;
     sensor_data.BMEPressure = bme.pressure;
