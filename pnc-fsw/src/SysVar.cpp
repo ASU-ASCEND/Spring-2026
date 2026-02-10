@@ -7,6 +7,7 @@ static SemaphoreHandle_t sysvar_mutex = xSemaphoreCreateMutex();
 
 // System Variables
 static float pico_temp_c;
+static uint32_t rtc_time; 
 
 // Access functions
 #define with_sysvar_mutex(operation)                       \
@@ -24,4 +25,12 @@ int8_t sysvar_get_pico_temp_c(float* output) {
 
 int8_t sysvar_set_pico_temp_c(float input) {
   with_sysvar_mutex(pico_temp_c = input);
+}
+
+int8_t sysvar_get_rtc_time(uint32_t* output){
+  with_sysvar_mutex(*output = rtc_time)
+}
+
+int8_t sysvar_set_rtc_time(uint32_t input){
+  with_sysvar_mutex(rtc_time = input); 
 }
