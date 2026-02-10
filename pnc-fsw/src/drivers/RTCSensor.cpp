@@ -7,7 +7,7 @@ RTCSensor::RTCSensor() : Sensor("RTC") {}
 bool RTCSensor::verify(){
   if (this->rtc.begin() == false) return false;
   //  only include to reset
-  this->rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  // this->rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   this->rtc.start();
   return true;
 }
