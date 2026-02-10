@@ -16,12 +16,14 @@ PicoTempSensor::PicoTempSensor() : Sensor("PicoTemp") {}
  * @return true always
  * @return false never
  */
-bool PicoTempSensor::verify() {
+bool PicoTempSensor::verify()
+{
   analogReadResolution(PICO_TEMP_ADC_RES);
   return true;
 }
 
-void PicoTempSensor::readToSysVar() {
+void PicoTempSensor::readToSysVar()
+{
   float temp = analogReadTemp();
   sysvar_set_pico_temp_c(temp);
 }
