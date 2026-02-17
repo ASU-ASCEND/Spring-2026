@@ -19,12 +19,6 @@
 /** @brief Error display bit 0 */
 #define ERROR_PIN_0 14
 
-/** @brief MTK3339 GPS CS Pin*/
-// #define MTK3339_CS_PIN 20
-#define SERIAL2_RX_PIN 9
-#define SERIAL2_TX_PIN 8
-#define GPS_I2C 1
-
 /** @brief UV sensor I2C Addresses */
 // [1, 1, 1, 0, 1, A1, A0]
 #define UV_I2C_ADDR 0x74
@@ -78,7 +72,7 @@
 #define RADIO_PREAMBLE_LEN 8
 #define RADIO_GAIN 0
 
-#define MINIMUM_TRANSMIT_PERIOD_MS 10000  // 10s
+#define MINIMUM_TRANSMIT_PERIOD_MS 10000 // 10s
 
 /** @brief Radio SPI  */
 #define RADIO_SPI SPI
