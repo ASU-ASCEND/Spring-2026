@@ -2,7 +2,9 @@
 
 #include "SysHead.h"
 #include <drivers/BMESensor.h>
+#include <drivers/GPSSensor.h>
 #include <drivers/INASensor.h>
+
 TaskHandle_t monitor_task_handle;
 
 static void monitor_task(void *params)
@@ -17,8 +19,6 @@ static void monitor_task(void *params)
     uint32_t rtc_time;
     res = sysvar_get_rtc_time(&rtc_time);
     log_task("RTC Time: " + String(rtc_time) + "(" + String(res) + ")");
-    
-    
 
     BMESensorData bme_data;
     res = sysvar_get_bme_data(&bme_data);
@@ -27,12 +27,26 @@ static void monitor_task(void *params)
     log_task("BME Humidity: " + String(bme_data.BMEHumidity) + "(" + String(res) + ")");
     log_task("BME Gas Sensor: " + String(bme_data.BMEGasResistance) + "(" + String(res) + ")");
 
+    GPSSensorData gps_data;
+    res = sysvar_get_gps_data(&gps_data);
+    log_task("GPS Unix Time: " + String(gps_data.unix_time_s) + "(" + String(res) + ")");
+    log_task("GPS Fix Type: " + String(gps_data.fix_type) + "(" + String(res) + ")");
+    log_task("GPS Fix OK: " + String(gps_data.fix_ok) + "(" + String(res) + ")");
+    log_task("GPS SIV: " + String(gps_data.siv) + "(" + String(res) + ")");
+    log_task("GPS Lat E7: " + String(gps_data.lat_e7) + "(" + String(res) + ")");
+    log_task("GPS Lon E7: " + String(gps_data.lon_e7) + "(" + String(res) + ")");
+    log_task("GPS Alt MSL mm: " + String(gps_data.alt_msl_mm) + "(" + String(res) + ")");
+    log_task("GPS Vel N mmps: " + String(gps_data.vel_n_mmps) + "(" + String(res) + ")");
+    log_task("GPS Vel E mmps: " + String(gps_data.vel_e_mmps) + "(" + String(res) + ")");
+    log_task("GPS Vel D mmps: " + String(gps_data.vel_d_mmps) + "(" + String(res) + ")");
+    log_task("GPS HAcc mm: " + String(gps_data.hacc_mm) + "(" + String(res) + ")");
+    log_task("GPS VAcc mm: " + String(gps_data.vacc_mm) + "(" + String(res) + ")");
+
     INASensorData ina_data;
     res = sysvar_get_ina_data(&ina_data);
     log_task("INA Current: " + String(ina_data.INACurrent) + "(" + String(res) + ")");
     log_task("INA Bus Voltage: " + String(ina_data.INABusVoltage) + "(" + String(res) + ")");
     log_task("INA Power: " + String(ina_data.INAPower) + "(" + String(res) + ")");
-
 
     delay(500);
   }
