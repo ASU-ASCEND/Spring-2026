@@ -25,6 +25,7 @@ bool INASensor::verify()
 void INASensor::readToSysVar()
 {
   INASensorData ina_data;
+
   ina_data.INACurrent = ina.readCurrent();
   ina_data.INABusVoltage = ina.readBusVoltage();
   ina_data.INAPower = ina.readPower();

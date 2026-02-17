@@ -8,13 +8,13 @@
 #include "Sensor.h"
 #include "Wire.h"
 
-typedef struct INASensorData
+struct INASensorData
 {
   float INACurrent;
   float INABusVoltage;
   float INAPower;
 
-} INASensorData;
+};
 
 
 class INASensor : public Sensor {
