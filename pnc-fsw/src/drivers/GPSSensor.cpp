@@ -35,6 +35,7 @@ bool GPSSensor::verify()
   // Keep I2C output clean and read compact UBX packets.
   gnss.setI2COutput(COM_TYPE_UBX);
   gnss.setAutoPVT(true);
+  gnss.setDynamicModel(DYN_MODEL_AIRBORNE4g);
 
   return true;
 }
