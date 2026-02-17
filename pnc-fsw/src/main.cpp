@@ -16,13 +16,15 @@
 #include "drivers/Sensor.h"
 #include "drivers/BMESensor.h"
 #include "drivers/GPSSensor.h"
+#include "drivers/INASensor.h"
 
 PicoTempSensor pico_temp_sensor;
 RTCSensor rtc_sensor;
 BMESensor bme_sensor;
 GPSSensor gps_sensor;
+INASensor ina_sensor;
 
-Sensor *sensors[] = {&pico_temp_sensor, &rtc_sensor, &bme_sensor, &gps_sensor};
+Sensor *sensors[] = {&pico_temp_sensor, &rtc_sensor, &bme_sensor, &ina_sensor, &gps_sensor};
 size_t sensors_len = sizeof(sensors) / sizeof(sensors[0]);
 
 // declarations

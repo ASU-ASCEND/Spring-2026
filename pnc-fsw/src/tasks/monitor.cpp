@@ -3,6 +3,8 @@
 #include "SysHead.h"
 #include <drivers/BMESensor.h>
 #include <drivers/GPSSensor.h>
+#include <drivers/INASensor.h>
+
 TaskHandle_t monitor_task_handle;
 
 static void monitor_task(void *params)
@@ -39,6 +41,12 @@ static void monitor_task(void *params)
     log_task("GPS Vel D mmps: " + String(gps_data.vel_d_mmps) + "(" + String(res) + ")");
     log_task("GPS HAcc mm: " + String(gps_data.hacc_mm) + "(" + String(res) + ")");
     log_task("GPS VAcc mm: " + String(gps_data.vacc_mm) + "(" + String(res) + ")");
+
+    INASensorData ina_data;
+    res = sysvar_get_ina_data(&ina_data);
+    log_task("INA Current: " + String(ina_data.INACurrent) + "(" + String(res) + ")");
+    log_task("INA Bus Voltage: " + String(ina_data.INABusVoltage) + "(" + String(res) + ")");
+    log_task("INA Power: " + String(ina_data.INAPower) + "(" + String(res) + ")");
 
     delay(500);
   }
