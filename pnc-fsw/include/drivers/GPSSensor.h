@@ -17,8 +17,10 @@ struct GPSSensorData
   int32_t vel_n_mmps;
   int32_t vel_e_mmps;
   int32_t vel_d_mmps;
-  uint32_t hacc_mm;
-  uint32_t vacc_mm;
+  int32_t hacc_mm;
+  int32_t vacc_mm;
+
+  static GPSSensorData fromGnss(SFE_UBLOX_GNSS &gnss);
 };
 
 /**
