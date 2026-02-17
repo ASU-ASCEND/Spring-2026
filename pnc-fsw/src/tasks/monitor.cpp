@@ -14,6 +14,8 @@ static void monitor_task(void* params) {
     uint32_t rtc_time; 
     res = sysvar_get_rtc_time(&rtc_time); 
     log_task("RTC Time: " + String(rtc_time) + "(" + String(res) + ")");
+    
+    
 
     delay(500);
   }
