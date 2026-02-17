@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <FreeRTOS.h>
 #include <drivers/BMESensor.h>
+#include <drivers/GPSSensor.h>
 
 #include "semphr.h"
 
@@ -16,5 +17,8 @@ int8_t sysvar_set_rtc_time(uint32_t input);
 
 int8_t sysvar_set_bme_data(BMESensorData *sensor_data);
 int8_t sysvar_get_bme_data(BMESensorData *sensor_data);
+
+int8_t sysvar_set_gps_data(GPSSensorData *sensor_data);
+int8_t sysvar_get_gps_data(GPSSensorData *sensor_data);
 
 #endif // SYS_VAR_H

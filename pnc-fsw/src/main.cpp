@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <FreeRTOS.h>
+#include <Wire.h>
 
 #include "SysHead.h"
 #include "task.h"
@@ -14,12 +15,14 @@
 #include "drivers/RTCSensor.h"
 #include "drivers/Sensor.h"
 #include "drivers/BMESensor.h"
+#include "drivers/GPSSensor.h"
 
 PicoTempSensor pico_temp_sensor;
 RTCSensor rtc_sensor;
 BMESensor bme_sensor;
+GPSSensor gps_sensor;
 
-Sensor *sensors[] = {&pico_temp_sensor, &rtc_sensor, &bme_sensor};
+Sensor *sensors[] = {&pico_temp_sensor, &rtc_sensor, &bme_sensor, &gps_sensor};
 size_t sensors_len = sizeof(sensors) / sizeof(sensors[0]);
 
 // declarations
@@ -30,6 +33,9 @@ void setup()
   Serial.begin(115200);
   while (!Serial)
     delay(100);
+
+  // Initialize I2C bus once before verifying any I2C sensors.
+  Wire.begin();
 
   log_task("ASCEND PnC FSW");
 
