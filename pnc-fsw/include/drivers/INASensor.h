@@ -8,7 +8,7 @@
 #include "Sensor.h"
 #include "Wire.h"
 
-struct INASensorData
+struct __attribute__((packed)) INASensorData
 {
   float INACurrent;
   float INABusVoltage;
