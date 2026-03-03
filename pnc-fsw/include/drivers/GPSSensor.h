@@ -5,7 +5,7 @@
 
 #include "Sensor.h"
 
-struct GPSSensorData
+struct __attribute__((packed)) GPSSensorData
 {
   uint32_t unix_time_s;
   uint8_t fix_type;

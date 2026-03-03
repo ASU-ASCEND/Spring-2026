@@ -5,7 +5,7 @@
 #include "Sensor.h"
 #include "Wire.h"
 
-struct BMESensorData
+struct __attribute__((packed)) BMESensorData
 {
     float BMETemp;
     uint32_t BMEPressure;
