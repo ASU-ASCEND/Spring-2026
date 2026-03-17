@@ -40,6 +40,8 @@
 
 /** @brief Default I2C Address for TMP117 */
 #define TMP117_I2C_ADDR 0x48
+/** @brief Default I2C Address for BME688 */
+#define BME688_I2C_ADDR 0x77
 
 /** @brief ADC Pin for Thermistor Readings */
 #define THERMISTOR_PIN 28
@@ -49,7 +51,7 @@
 
 /** @brief StatoCore board I2C Bus */
 #define STRATOCORE_I2C Wire
-
+    
 // storages
 /** @brief Toggle sending packets vs C strings over transfer queue */
 #define STORING_PACKETS 1
