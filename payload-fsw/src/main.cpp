@@ -24,6 +24,7 @@
 #include "SHTC3Sensor.h"
 #include "TMP11xSensor.h"
 #include "TempSensor.h"
+#include "GeigerSensor.h"
 
 // helper function definitions
 int verifySensors();
@@ -43,6 +44,7 @@ TempSensor      temp_sensor       (1000);
 ICM20948Sensor  icm_sensor        (0);
 PCF8523Sensor   rtc_sensor        (1000);
 TMP11xSensor    tmp_sensor        (500,   &STRATOCORE_I2C); 
+GeigerSensor    geiger_sensor     (1000); 
 
 // StratoSense
 AS7331Sensor    uv_sensor_out     (500, UV_I2C_ADDR);
@@ -56,7 +58,7 @@ AnalogTemp      analog_temp_out   (500);
 
 // sensor array
 Sensor* sensors[] = {&temp_sensor,      &icm_sensor,     &rtc_sensor,
-                     &tmp_sensor,       &uv_sensor_out,  &ens160_sensor_out,
+                     &tmp_sensor,       &geiger_sensor, &uv_sensor_out,  &ens160_sensor_out,
                      &bmp_sensor_out,   &tmp_sensor_out, &shtc3_sensor_out,
                      &ozone_sensor_out, &analog_temp_out};
 

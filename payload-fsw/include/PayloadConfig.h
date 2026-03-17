@@ -32,6 +32,9 @@
 /** @brief Ozone I2C address */
 #define OZONE_I2C_ADDR 0x73
 
+/** @brief Geiger interrupt pin */
+#define GEIGER_PIN 1
+
 /** @brief I2C1 pins */
 #define I2C1_SDA_PIN 10
 #define I2C1_SCL_PIN 11
@@ -59,29 +62,6 @@
 // storages
 /** @brief Toggle sending packets vs C strings over transfer queue */
 #define STORING_PACKETS 1
-
-// for radio
-/// Radio pinouts
-#define RADIO_NSS 1
-#define RADIO_DIO0 2
-#define RADIO_RESET 0
-#define RADIO_DIO1 3
-#define RADIO_TX_ENABLE 26
-#define RADIO_RX_ENABLE 27
-
-#define RADIO_FREQ 915.0
-#define RADIO_BW 125.0
-#define RADIO_SF 9
-#define RADIO_CR 7
-#define RADIO_SYNC_WORD RADIOLIB_SX127X_SYNC_WORD
-#define RADIO_POWER 17
-#define RADIO_PREAMBLE_LEN 8
-#define RADIO_GAIN 0
-
-#define MINIMUM_TRANSMIT_PERIOD_MS 10000  // 10s
-
-/** @brief Radio SPI  */
-#define RADIO_SPI SPI
 
 // spi1
 /** @brief SPI1 MISO Pin */
