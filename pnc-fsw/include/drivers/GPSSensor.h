@@ -5,8 +5,7 @@
 
 #include "Sensor.h"
 
-struct __attribute__((packed)) GPSSensorData
-{
+struct __attribute__((packed)) GPSSensorData {
   uint32_t unix_time_s;
   uint8_t fix_type;
   bool fix_ok;
@@ -20,19 +19,18 @@ struct __attribute__((packed)) GPSSensorData
   int32_t hacc_mm;
   int32_t vacc_mm;
 
-  static GPSSensorData fromGnss(SFE_UBLOX_GNSS &gnss);
+  static GPSSensorData fromGnss(SFE_UBLOX_GNSS& gnss);
 };
 
 /**
  * @brief Implementation of a Sensor for the u-blox GNSS receiver
  *
  */
-class GPSSensor : public Sensor
-{
-private:
+class GPSSensor : public Sensor {
+ private:
   SFE_UBLOX_GNSS gnss;
 
-public:
+ public:
   GPSSensor();
   bool verify() override;
   void readToSysVar() override;

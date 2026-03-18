@@ -50,7 +50,7 @@
 
 /** @brief StatoCore board I2C Bus */
 #define STRATOCORE_I2C Wire
-    
+
 // storages
 /** @brief Toggle sending packets vs C strings over transfer queue */
 #define STORING_PACKETS 1

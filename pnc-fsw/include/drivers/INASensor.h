@@ -8,14 +8,11 @@
 #include "Sensor.h"
 #include "Wire.h"
 
-struct __attribute__((packed)) INASensorData
-{
+struct __attribute__((packed)) INASensorData {
   float INACurrent;
   float INABusVoltage;
   float INAPower;
-
 };
-
 
 class INASensor : public Sensor {
  private:

@@ -4,7 +4,7 @@
 
 RTCSensor::RTCSensor() : Sensor("RTC") {}
 
-bool RTCSensor::verify(){
+bool RTCSensor::verify() {
   if (this->rtc.begin() == false) return false;
   //  only include to reset
   // this->rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
@@ -12,11 +12,11 @@ bool RTCSensor::verify(){
   return true;
 }
 
-void RTCSensor::readToSysVar(){
+void RTCSensor::readToSysVar() {
   DateTime now = rtc.now();
 
-  log_task("Seconds:" + String(now.second())); 
+  log_task("Seconds:" + String(now.second()));
 
-  log_task("Read time:" + String(now.unixtime())); 
-  sysvar_set_rtc_time(now.unixtime()); 
+  log_task("Read time:" + String(now.unixtime()));
+  sysvar_set_rtc_time(now.unixtime());
 }
