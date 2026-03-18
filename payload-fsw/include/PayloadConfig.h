@@ -13,17 +13,11 @@
 #include <Wire.h>
 
 /** @brief Error display bit 2 */
-#define ERROR_PIN_2 22
+#define ERROR_PIN_2 2
 /** @brief Error display bit 1 */
-#define ERROR_PIN_1 15
+#define ERROR_PIN_1 1
 /** @brief Error display bit 0 */
-#define ERROR_PIN_0 14
-
-/** @brief MTK3339 GPS CS Pin*/
-// #define MTK3339_CS_PIN 20
-#define SERIAL2_RX_PIN 9
-#define SERIAL2_TX_PIN 8
-#define GPS_I2C 1
+#define ERROR_PIN_0 0
 
 /** @brief UV sensor I2C Addresses */
 // [1, 1, 1, 0, 1, A1, A0]
@@ -33,22 +27,20 @@
 #define OZONE_I2C_ADDR 0x73
 
 /** @brief Geiger interrupt pin */
-#define GEIGER_PIN 1
+#define GEIGER_PIN 22
 
 /** @brief I2C1 pins */
-#define I2C1_SDA_PIN 10
-#define I2C1_SCL_PIN 11
-
-/** @brief Default I2C0 pins for disabling */
-#define BAD_I2C0_SDA_PIN 4
-#define BAD_I2C0_SCL_PIN 5
+#define I2C1_SDA_PIN 6
+#define I2C1_SCL_PIN 7
 
 /** @brief I2C0 pins */
-#define I2C0_SDA_PIN 8
-#define I2C0_SCL_PIN 9
+#define I2C0_SDA_PIN 4
+#define I2C0_SCL_PIN 5
 
 /** @brief Default I2C Address for TMP117 */
 #define TMP117_I2C_ADDR 0x48
+/** @brief Default I2C Address for BME688 */
+#define BME688_I2C_ADDR 0x77
 
 /** @brief ADC Pin for Thermistor Readings */
 #define THERMISTOR_PIN 28
@@ -58,7 +50,7 @@
 
 /** @brief StatoCore board I2C Bus */
 #define STRATOCORE_I2C Wire
-
+    
 // storages
 /** @brief Toggle sending packets vs C strings over transfer queue */
 #define STORING_PACKETS 1
@@ -71,15 +63,13 @@
 /** @brief SPI1 MOSI Pin */
 #define SPI1_MOSI_PIN 15
 
+/** @brief CAN CS Pin */
+#define CAN_CS 13
+
 /** @brief SD Card SPI Toggle */
 #define SD_SPI1 0
 /** @brief SD Card SPI CS Pin */
 #define SD_CS_PIN 17
-
-/** @brief Flash memory SPI Toggle */
-#define FLASH_SPI1 1
-/** @brief Flash chip SPI CS Pin */
-#define FLASH_CS_PIN 13
 
 // main pin definitions
 /** @brief Built-in LED Pin */
