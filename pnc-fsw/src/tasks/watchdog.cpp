@@ -26,6 +26,7 @@ static void watchdog_task(void* params) {
   watchdog_enable(WATCHDOG_INTERVAL_MS, true);
 
   while (1) {
+    log_task("Watchdog it"); 
     error_display.toggle();
 
     watchdog_update();
@@ -38,6 +39,7 @@ static void watchdog_task(void* params) {
               // if a heartbeat hasn't toggled since last check 
               if(heartbeats[i] == false){
                   // watchdog freeze
+                  log_task("Watchdog freeze"); 
                   while(1); 
               }
               // reset heartbeat
