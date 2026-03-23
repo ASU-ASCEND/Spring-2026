@@ -21,6 +21,7 @@
 #include "drivers/RTCSensor.h"
 #include "drivers/Sensor.h"
 
+
 PicoTempSensor pico_temp_sensor;
 RTCSensor rtc_sensor;
 BMESensor bme_sensor;
@@ -103,12 +104,19 @@ void sd_setup() {
 }
 
 void loop() {
+  watchdog_intertask_kick(WATCHDOG_MAIN_TASK_ID); 
   sysvar_update();
   store_data();
-
-
+  
+  save_radiacode_data(); 
 
   delay(500);
+}
+
+void save_radiacode_data(){
+  static uint32_t last_spectrum = millis(); 
+
+  
 }
 
 void sysvar_update() {

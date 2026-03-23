@@ -4,12 +4,16 @@
 #include <drivers/GPSSensor.h>
 #include <drivers/INASensor.h>
 
+#include "tasks/watchdog.h"
+
 #include "SysHead.h"
 
 TaskHandle_t monitor_task_handle;
 
 static void monitor_task(void* params) {
   while (1) {
+    watchdog_intertask_kick(WATCHDOG_MONITOR_TASK_ID); 
+
     float pico_temp_c;
     int8_t res = sysvar_get_pico_temp_c(&pico_temp_c);
 
@@ -65,7 +69,7 @@ static void monitor_task(void* params) {
     log_task("INA Power: " + String(ina_data.INAPower) + "(" + String(res) +
              ")");
 
-    delay(500);
+    delay(1000);
   }
 }
 
