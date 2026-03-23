@@ -39,9 +39,10 @@ bool sd_status = false;
 String filename = "";
 
 struct __attribute__((packed)) Packet {
-  uint32_t sync_bytes = 0;
+  uint32_t sync_bytes = 0xDEADCAFE;
+  uint32_t uptime; 
   uint8_t id = 0;
-  uint8_t length = sizeof(uint32_t) + 3 * sizeof(uint8_t) + sizeof(float) +
+  uint8_t length = 2 * sizeof(uint32_t) + 3 * sizeof(uint8_t) + sizeof(float) +
                    sizeof(BMESensorData) + sizeof(INASensorData) +
                    sizeof(GPSSensorData);
   float temp_data;
@@ -77,7 +78,7 @@ void setup() {
   // start tasks
   watchdog_task_init();
   monitor_task_init();
-  can_task_init();
+  // can_task_init();
 
   log_task("Setup complete.");
 }
@@ -104,6 +105,9 @@ void sd_setup() {
 void loop() {
   sysvar_update();
   store_data();
+
+
+
   delay(500);
 }
 
@@ -139,6 +143,7 @@ void store_data() {
   sysvar_get_ina_data(&ina_data);
   sysvar_get_gps_data(&gps_data);
 
+  packet.uptime = millis();
   packet.temp_data = pico_temp_c;
   packet.rtc_time = rtc_time;
   packet.bme_data = bme_data;

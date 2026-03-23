@@ -73,8 +73,6 @@ String BME688Sensor::readData() {
  * @param packet Pointer to the packet byte array
  */
 void BME688Sensor::readDataPacket(uint8_t*& packet) {
-  log_core("BME688 readDataPacket");
-
   if (!this->bme.performReading()) {
     return;
   }
