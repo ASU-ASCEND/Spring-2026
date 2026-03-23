@@ -6,8 +6,7 @@
 
 GPSSensor::GPSSensor() : Sensor("GPS") {}
 
-GPSSensorData GPSSensorData::fromGnss(SFE_UBLOX_GNSS &gnss)
-{
+GPSSensorData GPSSensorData::fromGnss(SFE_UBLOX_GNSS& gnss) {
   GPSSensorData sensor_data;
   sensor_data.unix_time_s = gnss.getUnixEpoch();
   sensor_data.fix_type = gnss.getFixType();
@@ -25,10 +24,8 @@ GPSSensorData GPSSensorData::fromGnss(SFE_UBLOX_GNSS &gnss)
   return sensor_data;
 }
 
-bool GPSSensor::verify()
-{
-  if (gnss.begin() == false)
-  {
+bool GPSSensor::verify() {
+  if (gnss.begin() == false) {
     return false;
   }
 
@@ -40,15 +37,12 @@ bool GPSSensor::verify()
   return true;
 }
 
-void GPSSensor::readToSysVar()
-{
-  if (gnss.getPVT() == false)
-  {
+void GPSSensor::readToSysVar() {
+  if (gnss.getPVT() == false) {
     return;
   }
 
-  if (gnss.getInvalidLlh())
-  {
+  if (gnss.getInvalidLlh()) {
     return;
   }
 

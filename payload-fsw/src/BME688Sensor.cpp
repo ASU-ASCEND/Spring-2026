@@ -1,4 +1,5 @@
 #include "BME688Sensor.h"
+
 #include "PayloadConfig.h"
 
 /**
@@ -6,22 +7,20 @@
  * ms
  *
  */
-BME688Sensor::BME688Sensor(TwoWire *i2c_bus) : BME688Sensor(0, i2c_bus) {}
+BME688Sensor::BME688Sensor(TwoWire* i2c_bus) : BME688Sensor(0, i2c_bus) {}
 
 /**
  * @brief Construct a new BME688 Sensor object
  *
  * @param minimum_period Minimum time to wait between readings in ms
  */
-BME688Sensor::BME688Sensor(unsigned long minimum_period, TwoWire *i2c_bus)
+BME688Sensor::BME688Sensor(unsigned long minimum_period, TwoWire* i2c_bus)
     : Sensor("BME688", "BME TempC,BME PresPa,BME Humidity,BME GasOhm,",
              minimum_period),
-      bme(i2c_bus)
-{
+      bme(i2c_bus) {
   this->i2c_bus = i2c_bus;
   this->i2c_addr = BME688_I2C_ADDR;
-  if (this->i2c_bus == &Wire1)
-    this->device_name += "_1";
+  if (this->i2c_bus == &Wire1) this->device_name += "_1";
 }
 
 /**
@@ -30,17 +29,14 @@ BME688Sensor::BME688Sensor(unsigned long minimum_period, TwoWire *i2c_bus)
  * @return true
  * @return false
  */
-bool BME688Sensor::verify()
-{
+bool BME688Sensor::verify() {
   this->i2c_bus->begin();
   bool verified = this->bme.begin(this->i2c_addr);
 
-  if (!verified)
-  {
+  if (!verified) {
     uint8_t alternate_addr = (this->i2c_addr == 0x77) ? 0x76 : 0x77;
     verified = this->bme.begin(alternate_addr);
-    if (verified)
-    {
+    if (verified) {
       this->i2c_addr = alternate_addr;
     }
   }
@@ -48,10 +44,7 @@ bool BME688Sensor::verify()
   log_core(this->device_name +
            (verified ? " verify success at 0x" + String(this->i2c_addr, HEX)
                      : " verify failed"));
-  if (!verified)
-  {
-    logBusScan(this->i2c_bus);
-  }
+
   return verified;
 }
 
@@ -60,10 +53,8 @@ bool BME688Sensor::verify()
  *
  * @return String CSV stub of temperature, pressure, humidity, and gas values
  */
-String BME688Sensor::readData()
-{
-  if (!this->bme.performReading())
-  {
+String BME688Sensor::readData() {
+  if (!this->bme.performReading()) {
     return this->readEmpty();
   }
 
@@ -81,12 +72,8 @@ String BME688Sensor::readData()
  *
  * @param packet Pointer to the packet byte array
  */
-void BME688Sensor::readDataPacket(uint8_t *&packet)
-{
-  log_core("BME688 readDataPacket");
-
-  if (!this->bme.performReading())
-  {
+void BME688Sensor::readDataPacket(uint8_t*& packet) {
+  if (!this->bme.performReading()) {
     return;
   }
 
@@ -114,8 +101,7 @@ void BME688Sensor::readDataPacket(uint8_t *&packet)
  * @param packet Pointer to packet bytes
  * @return String CSV stub of temperature, pressure, humidity, and gas values
  */
-String BME688Sensor::decodeToCSV(uint8_t *&packet)
-{
+String BME688Sensor::decodeToCSV(uint8_t*& packet) {
   float temp = 0;
   uint32_t pressure = 0;
   float humidity = 0;

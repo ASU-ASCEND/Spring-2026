@@ -19,6 +19,7 @@
 #include "BME688Sensor.h"
 #include "BMP390Sensor.h"
 #include "ENS160Sensor.h"
+#include "GeigerSensor.h"
 #include "ICM20948Sensor.h"
 #include "OzoneSensor.h"
 #include "PCF8523Sensor.h"
@@ -31,8 +32,8 @@ int verifySensors();
 void handleCommand();
 int verifySensorRecovery();
 String readSensorData();
-uint16_t readSensorDataPacket(uint8_t *packet);
-String decodePacket(uint8_t *packet);
+uint16_t readSensorDataPacket(uint8_t* packet);
+String decodePacket(uint8_t* packet);
 
 void handleDataInterface();
 
@@ -44,12 +45,13 @@ TempSensor      temp_sensor       (1000);
 ICM20948Sensor  icm_sensor        (0);
 PCF8523Sensor   rtc_sensor        (1000);
 TMP11xSensor    tmp_sensor        (500,   &STRATOCORE_I2C); 
+GeigerSensor    geiger_sensor     (1000); 
+BME688Sensor    bme688_sensor     (500,   &STRATOCORE_I2C);
 
 // StratoSense
 AS7331Sensor    uv_sensor_out     (500, UV_I2C_ADDR);
 ENS160Sensor    ens160_sensor_out (500,   &STRATOSENSE_I2C);
 BMP390Sensor    bmp_sensor_out    (500,   &STRATOSENSE_I2C);
-BME688Sensor    bme688_sensor_out (500,   &STRATOCORE_I2C);
 TMP11xSensor    tmp_sensor_out    (500,   &STRATOSENSE_I2C); 
 SHTC3Sensor     shtc3_sensor_out  (500,   &STRATOSENSE_I2C);
 OzoneSensor     ozone_sensor_out  (500);
@@ -57,10 +59,11 @@ AnalogTemp      analog_temp_out   (500);
 // clang-format on
 
 // sensor array
-Sensor *sensors[] = {&temp_sensor, &icm_sensor, &rtc_sensor,
-                     &tmp_sensor, &uv_sensor_out, &ens160_sensor_out,
-                     &bmp_sensor_out, &bme688_sensor_out, &tmp_sensor_out, &shtc3_sensor_out,
-                     &ozone_sensor_out, &analog_temp_out};
+Sensor* sensors[] = {&temp_sensor,    &icm_sensor,        &rtc_sensor,
+                     &tmp_sensor,     &bme688_sensor,     &geiger_sensor,
+                     &uv_sensor_out,  &ens160_sensor_out, &bmp_sensor_out,
+                     &tmp_sensor_out, &shtc3_sensor_out,  &ozone_sensor_out,
+                     &analog_temp_out};
 
 const int sensors_len = sizeof(sensors) / sizeof(sensors[0]);
 
@@ -81,14 +84,10 @@ uint32_t max_pause_duration = 60'000 * 2;
  * @brief Setup for core 0
  *
  */
-void setup()
-{
+void setup() {
   // multicore setup
   queue_init(&qt, QT_ENTRY_SIZE, QT_MAX_SIZE);
-  ErrorDisplay::instance().addCode(Error::NONE); // for safety
-
-  pinMode(BAD_I2C0_SDA_PIN, INPUT);
-  pinMode(BAD_I2C0_SCL_PIN, INPUT);
+  ErrorDisplay::instance().addCode(Error::NONE);  // for safety
 
   // setup i2c1
   Wire1.setSCL(I2C1_SCL_PIN);
@@ -112,29 +111,23 @@ void setup()
 
   // verify sensors
   // recovery config for sensors
-  for (int i = 0; i < sensors_len; i++)
-  {
+  for (int i = 0; i < sensors_len; i++) {
     sensors[i]->recoveryConfig(5, 1000);
   }
 
   int verified_count = verifySensorRecovery();
 
-  if (verified_count == 0)
-  {
+  if (verified_count == 0) {
     log_core("All sensor communications failed");
     ErrorDisplay::instance().addCode(Error::CRITICAL_FAIL);
-    while (1)
-    {
+    while (1) {
       ErrorDisplay::instance().toggle();
       log_core("Error");
       delay(1000);
     }
-  }
-  else
-  {
+  } else {
     log_core("At least one sensor works, continuing");
-    if (verified_count < 5)
-    {
+    if (verified_count < 5) {
       ErrorDisplay::instance().addCode(Error::LOW_SENSOR_COUNT);
     }
   }
@@ -150,8 +143,7 @@ unsigned int it = 0;
  * @brief Loop for core 0, handling sensor reads
  *
  */
-void loop()
-{
+void loop() {
   // toggle error display
   ErrorDisplay::instance().toggle();
 
@@ -179,9 +171,9 @@ void loop()
   // queue_add_blocking(&qt, packet);
   queue_try_add(&qt, packet);
 
-  delay(500); // remove before flight
+  delay(500);  // remove before flight
 
-  digitalWrite(ON_BOARD_LED_PIN, (it & 0x1)); // toggle light with iteration
+  digitalWrite(ON_BOARD_LED_PIN, (it & 0x1));  // toggle light with iteration
 }
 
 /**
@@ -190,20 +182,16 @@ void loop()
  *
  * @return int Number of sensors verified
  */
-int verifySensorRecovery()
-{
+int verifySensorRecovery() {
   int count = 0;
-  for (int i = 0; i < sensors_len; i++)
-  {
-    if (sensors[i]->attemptConnection())
-    {
+  for (int i = 0; i < sensors_len; i++) {
+    if (sensors[i]->attemptConnection()) {
       count++;
     }
   }
 
   log_core("Pin Verification Results:");
-  for (int i = 0; i < sensors_len; i++)
-  {
+  for (int i = 0; i < sensors_len; i++) {
     log_core((sensors[i]->getDeviceName()) + ": " +
              (sensors[i]->getVerified()
                   ? "Successful in Communication"
@@ -219,10 +207,9 @@ int verifySensorRecovery()
  *
  * @param packet Pointer to the packet array
  */
-uint16_t readSensorDataPacket(uint8_t *packet)
-{
+uint16_t readSensorDataPacket(uint8_t* packet) {
   // set sync bytes
-  uint8_t *temp_packet = packet;
+  uint8_t* temp_packet = packet;
   std::copy(SYNC_BYTES, SYNC_BYTES + sizeof(SYNC_BYTES), temp_packet);
   temp_packet += sizeof(SYNC_BYTES);
 
@@ -233,40 +220,35 @@ uint16_t readSensorDataPacket(uint8_t *packet)
   // build packet
   // millis()
   uint32_t now = millis();
-  std::copy((uint8_t *)(&now), (uint8_t *)(&now) + sizeof(now), temp_packet);
+  std::copy((uint8_t*)(&now), (uint8_t*)(&now) + sizeof(now), temp_packet);
   temp_packet += sizeof(now);
   sensor_id = (sensor_id << 1) | 1;
   // rest of the packet
-  for (int i = 0; i < sensors_len; i++)
-  {
-    if (sensors[i]->attemptConnection())
-    {
+  for (int i = 0; i < sensors_len; i++) {
+    if (sensors[i]->attemptConnection()) {
       sensors[i]->getDataPacket(sensor_id, temp_packet);
-    }
-    else
-    {
+    } else {
       sensor_id <<= 1;
     }
   }
 
   // calc data len
-  packet_len = (temp_packet - packet) + 1; // + 1 for checksum
+  packet_len = (temp_packet - packet) + 1;  // + 1 for checksum
   log_core("Packet Len: " + String(packet_len));
 
   // write sensor_id
   temp_packet = packet + sizeof(SYNC_BYTES);
-  std::copy((uint8_t *)(&sensor_id), (uint8_t *)(&sensor_id) + sizeof(sensor_id),
+  std::copy((uint8_t*)(&sensor_id), (uint8_t*)(&sensor_id) + sizeof(sensor_id),
             temp_packet);
 
   // write data len
   temp_packet += sizeof(sensor_id);
-  std::copy((uint8_t *)(&packet_len),
-            (uint8_t *)(&packet_len) + sizeof(packet_len), temp_packet);
+  std::copy((uint8_t*)(&packet_len),
+            (uint8_t*)(&packet_len) + sizeof(packet_len), temp_packet);
 
   // calculate checksum with sum complement parity
   int8_t checksum = 0;
-  for (size_t i = 0; i < packet_len - 1; i++)
-  {
+  for (size_t i = 0; i < packet_len - 1; i++) {
     checksum += packet[i];
   }
   *(packet + packet_len - 1) = -checksum;
@@ -280,15 +262,14 @@ uint16_t readSensorDataPacket(uint8_t *packet)
  * @param packet Pointer to the packet array
  * @return String The resulting CSV row
  */
-String decodePacket(uint8_t *packet)
-{
-  uint8_t *temp_packet = packet;
+String decodePacket(uint8_t* packet) {
+  uint8_t* temp_packet = packet;
 
-  uint32_t sync_bytes = *((uint32_t *)temp_packet);
+  uint32_t sync_bytes = *((uint32_t*)temp_packet);
   temp_packet += sizeof(sync_bytes);
-  uint32_t sensor_id = *((uint32_t *)temp_packet);
+  uint32_t sensor_id = *((uint32_t*)temp_packet);
   temp_packet += sizeof(sensor_id);
-  uint16_t packet_len = *((uint16_t *)temp_packet);
+  uint16_t packet_len = *((uint16_t*)temp_packet);
   temp_packet += sizeof(packet_len);
 
   // start with sensor_id in a cell in Hex
@@ -296,10 +277,8 @@ String decodePacket(uint8_t *packet)
 
   uint32_t sensor_id_temp = sensor_id;
   uint8_t id_offset = 0;
-  for (int i = 0; i < 32; i++)
-  {
-    if (sensor_id_temp & (1 << i))
-    {
+  for (int i = 0; i < 32; i++) {
+    if (sensor_id_temp & (1 << i)) {
       id_offset = i;
     }
   }
@@ -314,31 +293,24 @@ String decodePacket(uint8_t *packet)
   csv_row += String(r_now) + ",";
 
   int curr_offset = id_offset - 1;
-  while (curr_offset >= 0)
-  {
-    if (sensor_id & (1 << curr_offset))
-    {
+  while (curr_offset >= 0) {
+    if (sensor_id & (1 << curr_offset)) {
       // log_core("\tDecoding " + sensors[id_offset - curr_offset -
       // 1]->getDeviceName());
       csv_row += sensors[id_offset - curr_offset - 1]->decodeToCSV(temp_packet);
-    }
-    else if (sensors[id_offset - curr_offset - 1]->getVerified())
-    {
+    } else if (sensors[id_offset - curr_offset - 1]->getVerified()) {
       csv_row += sensors[id_offset - curr_offset - 1]->readEmpty();
-    }
-    else
-    {
+    } else {
     }
     curr_offset--;
   }
 
   // check parity
   uint8_t sum = 0;
-  for (uint16_t i = 0; i < packet_len - 1; i++)
-  {
+  for (uint16_t i = 0; i < packet_len - 1; i++) {
     sum += packet[i];
   }
-  sum += *(int8_t *)(packet + packet_len - 1);
+  sum += *(int8_t*)(packet + packet_len - 1);
   log_core("Sum = " + String(sum));
 
   return csv_row;
@@ -349,13 +321,10 @@ String decodePacket(uint8_t *packet)
  *
  * @return String Complete CSV row for iteration
  */
-String readSensorData()
-{
+String readSensorData() {
   String csv_row = header_condensed + "," + String(millis()) + ",";
-  for (int i = 0; i < sensors_len; i++)
-  {
-    if (sensors[i]->attemptConnection())
-    {
+  for (int i = 0; i < sensors_len; i++) {
+    if (sensors[i]->attemptConnection()) {
       csv_row += sensors[i]->getDataCSV();
     }
   }

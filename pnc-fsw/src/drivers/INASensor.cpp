@@ -1,11 +1,9 @@
 #include "drivers/INASensor.h"
+
 #include "SysHead.h"
 #include "Wire.h"
 
-
 INASensor::INASensor() : Sensor("INA") {}
-
-
 
 /**
  * @brief Verifies the connection to the INA sensor.
@@ -16,14 +14,12 @@ INASensor::INASensor() : Sensor("INA") {}
  * @return true If the sensor is successfully initialized.
  * @return false If the sensor fails to initialize or is not detected.
  */
-bool INASensor::verify() 
-{
+bool INASensor::verify() {
   ina = Adafruit_INA260();
   return ina.begin();
 }
 
-void INASensor::readToSysVar()
-{
+void INASensor::readToSysVar() {
   INASensorData ina_data;
 
   ina_data.INACurrent = ina.readCurrent();
@@ -31,6 +27,3 @@ void INASensor::readToSysVar()
   ina_data.INAPower = ina.readPower();
   sysvar_set_ina_data(&ina_data);
 }
-
-
-

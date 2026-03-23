@@ -13,11 +13,11 @@
 #include <Wire.h>
 
 /** @brief Error display bit 2 */
-#define ERROR_PIN_2 22
+#define ERROR_PIN_2 2
 /** @brief Error display bit 1 */
-#define ERROR_PIN_1 15
+#define ERROR_PIN_1 1
 /** @brief Error display bit 0 */
-#define ERROR_PIN_0 14
+#define ERROR_PIN_0 0
 
 /** @brief UV sensor I2C Addresses */
 // [1, 1, 1, 0, 1, A1, A0]
@@ -26,17 +26,16 @@
 /** @brief Ozone I2C address */
 #define OZONE_I2C_ADDR 0x73
 
-/** @brief I2C1 pins */
-#define I2C1_SDA_PIN 10
-#define I2C1_SCL_PIN 11
+/** @brief Geiger interrupt pin */
+#define GEIGER_PIN 22
 
-/** @brief Default I2C0 pins for disabling */
-#define BAD_I2C0_SDA_PIN 4
-#define BAD_I2C0_SCL_PIN 5
+/** @brief I2C1 pins */
+#define I2C1_SDA_PIN 6
+#define I2C1_SCL_PIN 7
 
 /** @brief I2C0 pins */
-#define I2C0_SDA_PIN 8
-#define I2C0_SCL_PIN 9
+#define I2C0_SDA_PIN 4
+#define I2C0_SCL_PIN 5
 
 /** @brief Default I2C Address for TMP117 */
 #define TMP117_I2C_ADDR 0x48
@@ -51,33 +50,10 @@
 
 /** @brief StatoCore board I2C Bus */
 #define STRATOCORE_I2C Wire
-    
+
 // storages
 /** @brief Toggle sending packets vs C strings over transfer queue */
 #define STORING_PACKETS 1
-
-// for radio
-/// Radio pinouts
-#define RADIO_NSS 1
-#define RADIO_DIO0 2
-#define RADIO_RESET 0
-#define RADIO_DIO1 3
-#define RADIO_TX_ENABLE 26
-#define RADIO_RX_ENABLE 27
-
-#define RADIO_FREQ 915.0
-#define RADIO_BW 125.0
-#define RADIO_SF 9
-#define RADIO_CR 7
-#define RADIO_SYNC_WORD RADIOLIB_SX127X_SYNC_WORD
-#define RADIO_POWER 17
-#define RADIO_PREAMBLE_LEN 8
-#define RADIO_GAIN 0
-
-#define MINIMUM_TRANSMIT_PERIOD_MS 10000 // 10s
-
-/** @brief Radio SPI  */
-#define RADIO_SPI SPI
 
 // spi1
 /** @brief SPI1 MISO Pin */
@@ -87,15 +63,13 @@
 /** @brief SPI1 MOSI Pin */
 #define SPI1_MOSI_PIN 15
 
+/** @brief CAN CS Pin */
+#define CAN_CS 13
+
 /** @brief SD Card SPI Toggle */
 #define SD_SPI1 0
 /** @brief SD Card SPI CS Pin */
 #define SD_CS_PIN 17
-
-/** @brief Flash memory SPI Toggle */
-#define FLASH_SPI1 1
-/** @brief Flash chip SPI CS Pin */
-#define FLASH_CS_PIN 13
 
 // main pin definitions
 /** @brief Built-in LED Pin */
