@@ -30,9 +30,11 @@ INASensor ina_sensor;
 
 Sensor* sensors[] = {&pico_temp_sensor, &rtc_sensor, &bme_sensor, &ina_sensor,
                      &gps_sensor};
-size_t sensors_len = sizeof(sensors) / sizeof(sensors[0]);
+const size_t sensors_len = sizeof(sensors) / sizeof(sensors[0]);
+bool found_sensors[sensors_len];
 
 // declarations
+void save_radiacode_data();
 void sysvar_update();
 void store_data();
 void sd_setup();
@@ -55,6 +57,8 @@ struct __attribute__((packed)) Packet {
 };
 
 void setup() {
+  pinMode(LED_BUILTIN, OUTPUT); 
+
   Serial.begin(115200);
   while (!Serial) delay(100);
 
@@ -67,8 +71,10 @@ void setup() {
   for (int i = 0; i < sensors_len; i++) {
     log_task("Verifying " + sensors[i]->getSensorName() + "...");
     if (sensors[i]->verify()) {
+      found_sensors[i] = true; 
       log_task("Success.");
     } else {
+      found_sensors[i] = false; 
       log_task("Failure.");
     }
   }
@@ -97,26 +103,31 @@ void sd_setup() {
       sd_status = false;
       SD.end();
     }
+    log_task("Saving to " + filename); 
     file.close();
   } else {
     ErrorDisplay::instance().addCode(Error::SD_CARD_FAIL);
   }
 }
 
+static uint8_t it = 0; 
 void loop() {
+  digitalWrite(LED_BUILTIN, it & 0x1); 
+  it++; 
+
   watchdog_intertask_kick(WATCHDOG_MAIN_TASK_ID); 
   sysvar_update();
   store_data();
   
   save_radiacode_data(); 
 
-  delay(500);
+  delay(200);
 }
 
 void save_radiacode_data(){
   static uint32_t last_spectrum = millis(); 
 
-  
+
 }
 
 void sysvar_update() {
@@ -124,7 +135,9 @@ void sysvar_update() {
   log_task("Starting SysVar Update...");
 
   for (int i = 0; i < sensors_len; i++) {
-    sensors[i]->readToSysVar();
+    if(found_sensors[i]){
+      sensors[i]->readToSysVar();
+    }
   }
 
   log_task("Done.");

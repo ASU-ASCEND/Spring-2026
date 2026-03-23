@@ -5,7 +5,8 @@
 
 BMESensor::BMESensor() : Sensor("BME") { bme = Adafruit_BME680(&Wire); }
 
-bool BMESensor::verify() { return bme.begin(); }
+// i2c addr default 0x77, alt 0x76
+bool BMESensor::verify() { return bme.begin(0x76); }
 
 void BMESensor::readToSysVar() {
   BMESensorData sensor_data;

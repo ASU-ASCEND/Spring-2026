@@ -15,8 +15,8 @@ bool RTCSensor::verify() {
 void RTCSensor::readToSysVar() {
   DateTime now = rtc.now();
 
-  log_task("Seconds:" + String(now.second()));
+  // log_task("Seconds:" + String(now.second()));
 
-  log_task("Read time:" + String(now.unixtime()));
+  // log_task("Read time:" + String(now.unixtime()));
   sysvar_set_rtc_time(now.unixtime());
 }
