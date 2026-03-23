@@ -173,6 +173,8 @@ void radiacode_ble_init(){
   debug_printf("Starting BLE Client\n");
 
   BLE.begin();
+
+  debug_printf("Done."); 
 }
 
 uint8_t radiacode_ble_connect(String target_mac, bool verbose) {

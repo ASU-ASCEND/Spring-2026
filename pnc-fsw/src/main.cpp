@@ -1,17 +1,14 @@
 #include <Arduino.h>
-#include <FreeRTOS.h>
 #include <SD.h>
 #include <SPI.h>
 #include <Wire.h>
 
-#include "RadiacodeBLE.h"
-
 #include "ErrorDisplay.h"
+#include "RadiacodeBLE.h"
 #include "SysHead.h"
-#include "task.h"
+#include "pico/multicore.h"
 
 // tasks
-#include "tasks/can_manage.h"
 #include "tasks/monitor.h"
 #include "tasks/watchdog.h"
 
@@ -22,7 +19,6 @@
 #include "drivers/PicoTempSensor.h"
 #include "drivers/RTCSensor.h"
 #include "drivers/Sensor.h"
-
 
 PicoTempSensor pico_temp_sensor;
 RTCSensor rtc_sensor;
@@ -36,7 +32,7 @@ const size_t sensors_len = sizeof(sensors) / sizeof(sensors[0]);
 bool found_sensors[sensors_len];
 
 String rc_target_mac = "52:43:06:60:17:DD";
-String rc_filename = ""; 
+String rc_filename = "";
 
 // declarations
 void save_radiacode_data();
@@ -48,7 +44,7 @@ String filename = "";
 
 struct __attribute__((packed)) Packet {
   uint32_t sync_bytes = 0xDEADCAFE;
-  uint32_t uptime; 
+  uint32_t uptime;
   uint8_t id = 0;
   uint8_t length = 2 * sizeof(uint32_t) + 3 * sizeof(uint8_t) + sizeof(float) +
                    sizeof(BMESensorData) + sizeof(INASensorData) +
@@ -62,8 +58,9 @@ struct __attribute__((packed)) Packet {
 };
 
 void setup() {
-  watchdog_disable(); // wait for setup later
-  pinMode(LED_BUILTIN, OUTPUT); 
+  sysvar_init(); // setup sysvar protection 
+  watchdog_disable();  // wait for setup later
+  pinMode(LED_BUILTIN, OUTPUT);
 
   Serial.begin(115200);
   while (!Serial) delay(100);
@@ -77,10 +74,10 @@ void setup() {
   for (int i = 0; i < sensors_len; i++) {
     log_task("Verifying " + sensors[i]->getSensorName() + "...");
     if (sensors[i]->verify()) {
-      found_sensors[i] = true; 
+      found_sensors[i] = true;
       log_task("Success.");
     } else {
-      found_sensors[i] = false; 
+      found_sensors[i] = false;
       log_task("Failure.");
     }
   }
@@ -89,17 +86,12 @@ void setup() {
   sd_setup();
 
   // radiacode setup
-  radiacode_ble_init(); 
-  uint8_t res = radiacode_ble_connect(rc_target_mac, true); 
-  if(res != 0){
+  radiacode_ble_init();
+  uint8_t res = radiacode_ble_connect(rc_target_mac, true);
+  if (res != 0) {
     watchdog_enable(100, true);
-    while(1); // trigger a reboot
+    while (1);  // trigger a reboot
   }
-
-  // start tasks
-  // watchdog_task_init();
-  // monitor_task_init();
-  // can_task_init();
 
   log_task("Setup complete.");
 }
@@ -116,9 +108,9 @@ void sd_setup() {
       ErrorDisplay::instance().addCode(Error::SD_CARD_FAIL);
       sd_status = false;
       SD.end();
-      return; 
+      return;
     }
-    log_task("Saving to " + filename); 
+    log_task("Saving to " + filename);
     file.close();
 
     rc_filename = "rc" + String(num) + ".txt";
@@ -127,101 +119,100 @@ void sd_setup() {
       ErrorDisplay::instance().addCode(Error::SD_CARD_FAIL);
       sd_status = false;
       SD.end();
-      return; 
+      return;
     }
-    rc_file.close();  
+    rc_file.close();
     log_task("Saving to " + rc_filename);
   } else {
     ErrorDisplay::instance().addCode(Error::SD_CARD_FAIL);
   }
 }
 
-static uint8_t it = 0; 
+static uint8_t it = 0;
 void loop() {
-  digitalWrite(LED_BUILTIN, it & 0x1); 
-  it++; 
+  digitalWrite(LED_BUILTIN, it & 0x1);
+  it++;
 
-  // watchdog_intertask_kick(WATCHDOG_MAIN_TASK_ID); 
-  // sysvar_update();
-  // store_data();
-  
-  save_radiacode_data(); 
+  watchdog_intertask_update(WATCHDOG_MAIN_TASK_ID);
+  sysvar_update();
+  store_data();
+
+  save_radiacode_data();
 
   delay(200);
 }
 
-static int spectrum[1024]; // to not be on stack 
-void save_radiacode_data(){
-  static uint32_t last_spectrum = 0; 
-  static uint8_t fails = 0; 
+static int spectrum[1024];  // to not be on stack
+void save_radiacode_data() {
+  static uint32_t last_spectrum = 0;
+  static uint8_t fails = 0;
 
-  log_task("save_radiacode_data"); 
+  log_task("save_radiacode_data");
 
-  // if(sd_status == false){
-  //   sd_setup(); 
-  //   return; 
-  // }
+  if(sd_status == false){
+    sd_setup();
+    return;
+  }
 
-  if(fails > 10){
-    log_task("More than 10 fails, restarting..."); 
-    while(1); 
+  if (fails > 10) {
+    log_task("More than 10 fails, restarting...");
+    while (1);
   }
 
   // get event data
   BytesBuffer* r = read_request(VS::DATA_BUF);
 
-  if(r != nullptr){ 
-    // File fout = SD.open(rc_filename, FILE_WRITE);
+  if (r != nullptr) {
+    File fout = SD.open(rc_filename, FILE_WRITE);
     while (r->size() >= 7) {
       DataPoint d = consume_data_buf(r);
 
       std::visit(
-          [](const auto& v) {
+          [&fout](const auto& v) {
             char str[500];
             int len = v.to_string(str, 500);
             log_task_printf("%lu,%d,", millis(), len);
             log_printf("%s\n", str);
-            // fout.printf("%lu,%s", millis(), str); 
+            fout.printf("%lu,%s", millis(), str);
           },
           d);
     }
-    // fout.close(); 
+    fout.close();
   } else {
-    fails++; 
+    fails++;
   }
 
-  if (millis() - last_spectrum > 30000) { // 30s
-    log_task("Reading spectrum"); 
+  if (millis() - last_spectrum > 30000) {  // 30s
+    log_task("Reading spectrum");
     last_spectrum = millis();
-    BytesBuffer* spec_buf = readSpectrumData(); 
+    BytesBuffer* spec_buf = readSpectrumData();
 
-    if(spec_buf == nullptr){
-      fails++; 
-      return; 
+    if (spec_buf == nullptr) {
+      fails++;
+      return;
     }
 
-    // File fout = SD.open(rc_filename, FILE_WRITE);
-    
+    File fout = SD.open(rc_filename, FILE_WRITE);
+
     float a0, a1, a2;
     uint32_t ts;
     decode_spectrum(spec_buf, spectrum, a0, a1, a2, ts);
 
     log_task_printf("a0: %f, a1: %f, a2: %f, ts: %u\n", a0, a1, a2, ts);
-    // fout.printf("a0: %f, a1: %f, a2: %f, ts: %u\n", a0, a1, a2, ts);
+    fout.printf("a0: %f, a1: %f, a2: %f, ts: %u\n", a0, a1, a2, ts);
 
     log_task_printf("Spectrum: ");
-    // fout.printf("Spectrum: "); 
+    fout.printf("Spectrum: ");
 
     for (int i = 0; i < 1024; i++) {
       log_printf("%d, ", spectrum[i]);
-      // fout.printf("%d, ", spectrum[i]);
+      fout.printf("%d, ", spectrum[i]);
     }
     log_printf("\n");
-    // fout.printf("\n"); 
+    fout.printf("\n");
 
-    // fout.close(); 
+    fout.close();
   }
-
 }
 
 void sysvar_update() {
@@ -229,7 +220,7 @@ void sysvar_update() {
   log_task("Starting SysVar Update...");
 
   for (int i = 0; i < sensors_len; i++) {
-    if(found_sensors[i]){
+    if (found_sensors[i]) {
       sensors[i]->readToSysVar();
     }
   }
@@ -238,7 +229,7 @@ void sysvar_update() {
 }
 
 void store_data() {
-  log_task("store_data"); 
+  log_task("store_data");
   if (sd_status == false) {
     sd_setup();
     return;
@@ -281,5 +272,23 @@ void store_data() {
   }
   output.write((uint8_t*)&packet, packet.length);
   output.close();
-  log_task("Done."); 
+  log_task("Done.");
+}
+
+extern "C" bool core1_separate_stack = true; 
+// core 1
+// ---------------------------------------------------------------------------------------------
+// monitor and watchdog
+void setup1() {
+  // start watchdog and monitor tasks after ble is set up 
+  delay(20000);
+
+  monitor_task_init();
+  watchdog_task_init();
+}
+
+void loop1() {
+  watchdog_task();
+  monitor_task();
+  delay(1000); 
 }
