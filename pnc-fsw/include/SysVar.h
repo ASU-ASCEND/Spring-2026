@@ -2,12 +2,12 @@
 #define SYS_VAR_H
 
 #include <Arduino.h>
-#include <FreeRTOS.h>
 #include <drivers/BMESensor.h>
 #include <drivers/GPSSensor.h>
 #include <drivers/INASensor.h>
 
-#include "semphr.h"
+// setup 
+void sysvar_init();
 
 // Access functions
 int8_t sysvar_get_pico_temp_c(float* output);

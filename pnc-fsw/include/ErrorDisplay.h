@@ -2,13 +2,12 @@
 #define ERROR_DISPLAY_H
 
 #include <Arduino.h>
-#include <FreeRTOS.h>
 
 #include "HardwareConfig.h"
-#include "Logger.h"
-#include "semphr.h"
-
-#define ERROR_MUTEX_DELAY pdMS_TO_TICKS(50)
+#include "SysHead.h"
+#include "pico/multicore.h"
+#include "pico/mutex.h"
+#include "pico/stdlib.h"
 
 /**
  * Error codes:
@@ -17,39 +16,32 @@
  * 0b111) Max 7 errors (1 led should always be blinking) NONE will always be 1
  */
 typedef enum {
-  // no sensors or no storage
-  CRITICAL_FAIL = 0,
-  // triggered if SD card verify function returns false or if an SD card write
-  // fails
-  SD_CARD_FAIL,
-  // triggered for less than 5 sensors verified
-  LOW_SENSOR_COUNT,
-  // triggered if SD card has multiple files TODO fix trigger to be more useful
-  POWER_CYCLED,
-  // default state, lowest priority
-  NONE
+  CRITICAL_FAIL = 0,  // no sensors or no storage
+  SD_CARD_FAIL,  // triggered if SD card verify function returns false or if an
+                 // SD card write fails
+  LOW_SENSOR_COUNT,  // triggered for less than 5 sensors verified
+  POWER_CYCLED,  // determined based on if there are multiple data files on the
+                 // SD card
+  NONE           // default state, lowest priority
 } Error;
 
 /**
- * @brief Singleton class for the 3 GPIO LED Error Display. Uses mutex
- * protection for data and GPIO access BUT DOES NOT ENFORCE IT.
+ * @brief Singleton class for the 3 GPIO LED Error Display
  *
  */
 class ErrorDisplay {
  private:
-  // mutex_t error_display_mutex;
-  SemaphoreHandle_t error_display_mutex;
+  mutex_t error_display_mutex;
   int pin_level;
   Error code;
 
   ErrorDisplay() {
-    // mutex_init(&error_display_mutex);
-    error_display_mutex = xSemaphoreCreateMutex();
+    mutex_init(&error_display_mutex);
     this->pin_level = 1;
     this->code = NONE;
     pinMode(ERROR_2_PIN, OUTPUT);
-    pinMode(ERROR_1_PIN, INPUT);
-    pinMode(ERROR_0_PIN, INPUT);
+    pinMode(ERROR_1_PIN, OUTPUT);
+    pinMode(ERROR_0_PIN, OUTPUT);
   }
 
  public:
@@ -70,20 +62,13 @@ class ErrorDisplay {
    * @param e The error code to display
    */
   void addCode(Error e) {
-    // mutex_enter_blocking(&error_display_mutex);
-    bool has_mutex = false;
-    if (xSemaphoreTake(error_display_mutex, ERROR_MUTEX_DELAY) == pdTRUE) {
-      has_mutex = true;
-    } else {
-      log_task_error("Bypassing ErrorDisplay mutex");
-    }
+    mutex_enter_blocking(&error_display_mutex);
 
     if (e < this->code) {
       this->code = e;
     }
 
-    // mutex_exit(&error_display_mutex);
-    if (has_mutex) xSemaphoreGive(error_display_mutex);
+    mutex_exit(&error_display_mutex);
   }
 
   /**
@@ -91,13 +76,7 @@ class ErrorDisplay {
    *
    */
   void toggle() {
-    // mutex_enter_blocking(&error_display_mutex);
-    bool has_mutex = false;
-    if (xSemaphoreTake(error_display_mutex, ERROR_MUTEX_DELAY) == pdTRUE) {
-      has_mutex = true;
-    } else {
-      log_task_error("Bypassing ErrorDisplay mutex");
-    }
+    mutex_enter_blocking(&error_display_mutex);
 
     this->pin_level = !(this->pin_level);
 
@@ -109,8 +88,7 @@ class ErrorDisplay {
     digitalWrite(ERROR_1_PIN, this->pin_level && (display_code & 0b010));
     digitalWrite(ERROR_0_PIN, this->pin_level && (display_code & 0b001));
 
-    // mutex_exit(&error_display_mutex);
-    if (has_mutex) xSemaphoreGive(error_display_mutex);
+    mutex_exit(&error_display_mutex);
   }
 };
 

@@ -10,7 +10,7 @@ struct __attribute__((packed)) GPSSensorData {
   uint8_t fix_type;
   bool fix_ok;
   uint8_t siv;
-  uint8_t buff = 0; // additional byte to avoid word misalignment in packed
+  uint8_t buff = 0;  // additional byte to avoid word misalignment in packed
   int32_t lat_e7;
   int32_t lon_e7;
   int32_t alt_msl_mm;

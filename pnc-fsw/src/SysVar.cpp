@@ -1,9 +1,15 @@
 #include "SysVar.h"
 
+#include "pico/mutex.h"
+
 #define SYSVAR_ACCESS_DELAY 100
 
 // mutex
-static SemaphoreHandle_t sysvar_mutex = xSemaphoreCreateMutex();
+static mutex_t sysvar_mutex;
+
+void sysvar_init(){
+  mutex_init(&sysvar_mutex); 
+}
 
 // System Variables
 static float pico_temp_c;
@@ -13,13 +19,14 @@ static BMESensorData bme_data;
 static GPSSensorData gps_data;
 
 // Access functions
-#define with_sysvar_mutex(operation)                       \
-  if (xSemaphoreTake(sysvar_mutex, SYSVAR_ACCESS_DELAY)) { \
-    operation;                                             \
-    xSemaphoreGive(sysvar_mutex);                          \
-    return 0;                                              \
-  } else {                                                 \
-    return -1;                                             \
+#define with_sysvar_mutex(operation)                                   \
+  if (mutex_try_enter_block_until(                                     \
+          &sysvar_mutex, make_timeout_time_ms(SYSVAR_ACCESS_DELAY))) { \
+    operation;                                                         \
+    mutex_exit(&sysvar_mutex);                                         \
+    return 0;                                                          \
+  } else {                                                             \
+    return -1;                                                         \
   }
 
 int8_t sysvar_get_pico_temp_c(float* output) {
