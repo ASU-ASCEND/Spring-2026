@@ -46,7 +46,7 @@ struct __attribute__((packed)) Packet {
   uint32_t sync_bytes = 0xDEADCAFE;
   uint32_t uptime;
   uint8_t id = 0;
-  uint8_t length = 2 * sizeof(uint32_t) + 3 * sizeof(uint8_t) + sizeof(float) +
+  uint8_t length = 3 * sizeof(uint32_t) + 3 * sizeof(uint8_t) + sizeof(float) +
                    sizeof(BMESensorData) + sizeof(INASensorData) +
                    sizeof(GPSSensorData);
   float temp_data;
@@ -173,7 +173,7 @@ void save_radiacode_data() {
             int len = v.to_string(str, 500);
             log_task_printf("%lu,%d,", millis(), len);
             log_printf("%s\n", str);
-            fout.printf("%lu,%s", millis(), str);
+            fout.printf("%lu,%s\n", millis(), str);
           },
           d);
     }
