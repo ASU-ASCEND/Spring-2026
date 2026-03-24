@@ -41,7 +41,7 @@ struct __attribute__((packed)) Packet
 {
   uint32_t sync_bytes = 0;
   uint8_t id = 0;
-  uint8_t length = sizeof(uint32_t) + 3*sizeof(uint8_t) + sizeof(float) + sizeof(BMESensorData) + sizeof(INASensorData) + sizeof(GPSSensorData); 
+  uint8_t length = sizeof(Packet);
   float temp_data;
   uint32_t rtc_time;
   BMESensorData bme_data;
@@ -103,7 +103,8 @@ void sd_setup()
       SD.end();
     }
     file.close(); 
-  } else 
+  } 
+  else 
   {
     ErrorDisplay::instance().addCode(Error::SD_CARD_FAIL);
   }
@@ -167,14 +168,14 @@ void store_data()
     pos++;
   }
   packet.checksum = -sum; //calculate checksum with sum complement parity
-  File output = SD.open(filename,FILE_WRITE);
+  File output = SD.open(filename, FILE_WRITE);
   if(!output)
   {
     ErrorDisplay::instance().addCode(Error::SD_CARD_FAIL);
     sd_status = false;
     SD.end();
   }
-  output.write((uint8_t *)&packet,packet.length);
+  output.write((uint8_t *)&packet, packet.length);
   output.close();
   
 }
