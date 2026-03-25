@@ -16,10 +16,11 @@ class ENS160Sensor : public Sensor {
   SparkFun_ENS160 ens;
   TwoWire* i2c_bus;
   void setCompensations();
+  uint8_t i2c_addr; 
 
  public:
-  ENS160Sensor(TwoWire* i2c_bus = &Wire);
-  ENS160Sensor(unsigned long minium_period, TwoWire* i2c_bus = &Wire);
+  ENS160Sensor(TwoWire* i2c_bus = &Wire, uint8_t i2c_addr = ENS160_ADDRESS_HIGH);
+  ENS160Sensor(unsigned long minium_period, TwoWire* i2c_bus = &Wire, uint8_t i2c_addr = ENS160_ADDRESS_HIGH);
   bool verify() override;
   String readData() override;
   void readDataPacket(uint8_t*& packet) override;
