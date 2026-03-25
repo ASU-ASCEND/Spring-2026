@@ -63,7 +63,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   Serial.begin(115200);
-  while (!Serial) delay(100);
+  // while (!Serial) delay(100);
 
   // Initialize I2C bus once before verifying any I2C sensors.
   Wire.begin();
