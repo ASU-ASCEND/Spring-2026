@@ -58,7 +58,7 @@ struct __attribute__((packed)) Packet {
 };
 
 void setup() {
-  sysvar_init(); // setup sysvar protection 
+  sysvar_init();       // setup sysvar protection
   watchdog_disable();  // wait for setup later
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -149,7 +149,7 @@ void save_radiacode_data() {
 
   log_task("save_radiacode_data");
 
-  if(sd_status == false){
+  if (sd_status == false) {
     sd_setup();
     return;
   }
@@ -275,12 +275,12 @@ void store_data() {
   log_task("Done.");
 }
 
-extern "C" bool core1_separate_stack = true; 
+extern "C" bool core1_separate_stack = true;
 // core 1
 // ---------------------------------------------------------------------------------------------
 // monitor and watchdog
 void setup1() {
-  // start watchdog and monitor tasks after ble is set up 
+  // start watchdog and monitor tasks after ble is set up
   delay(20000);
 
   monitor_task_init();
@@ -290,5 +290,5 @@ void setup1() {
 void loop1() {
   watchdog_task();
   monitor_task();
-  delay(1000); 
+  delay(1000);
 }

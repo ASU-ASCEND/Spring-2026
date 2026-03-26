@@ -6,7 +6,7 @@
 #include <drivers/GPSSensor.h>
 #include <drivers/INASensor.h>
 
-// setup 
+// setup
 void sysvar_init();
 
 // Access functions

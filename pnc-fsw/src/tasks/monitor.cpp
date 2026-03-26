@@ -9,12 +9,11 @@
 
 void monitor_task() {
   watchdog_intertask_update(WATCHDOG_MONITOR_TASK_ID);
-  
+
   float pico_temp_c;
   int8_t res = sysvar_get_pico_temp_c(&pico_temp_c);
 
   log_task("Pico Temp: " + String(pico_temp_c) + "(" + String(res) + ")");
-
 
   uint32_t rtc_time;
   res = sysvar_get_rtc_time(&rtc_time);

@@ -12,7 +12,7 @@
 class OzoneSensor : public Sensor {
  private:
   DFRobot_OzoneSensor ozone;
-  TwoWire* i2c_bus; 
+  TwoWire* i2c_bus;
 
  public:
   OzoneSensor(TwoWire* i2c_bus = &Wire);

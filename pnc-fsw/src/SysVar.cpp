@@ -7,9 +7,7 @@
 // mutex
 static mutex_t sysvar_mutex;
 
-void sysvar_init(){
-  mutex_init(&sysvar_mutex); 
-}
+void sysvar_init() { mutex_init(&sysvar_mutex); }
 
 // System Variables
 static float pico_temp_c;

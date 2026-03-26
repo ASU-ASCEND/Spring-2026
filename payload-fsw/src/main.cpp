@@ -57,11 +57,11 @@ OzoneSensor     ozone_sensor_out  (500,   &STRATOSENSE_I2C);
 // clang-format on
 
 // sensor array
-Sensor* sensors[] = {&temp_sensor,    &icm_sensor,        &rtc_sensor,
-                     &tmp_sensor,     &bme688_sensor,     &geiger_sensor,
-                     &uv_sensor_out,  &ens160_sensor_out, &bmp_sensor_out,
-                     &tmp_sensor_out, &shtc3_sensor_out,  &ozone_sensor_out,
-                     };
+Sensor* sensors[] = {
+    &temp_sensor,    &icm_sensor,     &rtc_sensor,       &tmp_sensor,
+    &bme688_sensor,  &geiger_sensor,  &uv_sensor_out,    &ens160_sensor_out,
+    &bmp_sensor_out, &tmp_sensor_out, &shtc3_sensor_out, &ozone_sensor_out,
+};
 
 const int sensors_len = sizeof(sensors) / sizeof(sensors[0]);
 

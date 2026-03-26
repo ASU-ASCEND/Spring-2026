@@ -46,9 +46,9 @@ void watchdog_task() {
   delay(500);
 }
 
-static bool watchdog_intertask_update_disabled = true;  
+static bool watchdog_intertask_update_disabled = true;
 void watchdog_intertask_update(uint8_t id) {
-  if(watchdog_intertask_update_disabled) return; 
+  if (watchdog_intertask_update_disabled) return;
   if (mutex_try_enter_block_until(&heartbeats_mutex,
                                   make_timeout_time_ms(100))) {
     heartbeats[id] = true;
@@ -59,7 +59,7 @@ void watchdog_intertask_update(uint8_t id) {
 void watchdog_task_init() {
   // setup task
   mutex_init(&heartbeats_mutex);
-  watchdog_intertask_update_disabled = false; // toggle
+  watchdog_intertask_update_disabled = false;  // toggle
 
   log_task("Watchdog task started.");
 }

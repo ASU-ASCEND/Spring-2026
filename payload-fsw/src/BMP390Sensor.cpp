@@ -7,14 +7,16 @@
  * ms
  *
  */
-BMP390Sensor::BMP390Sensor(TwoWire* i2c_bus, uint8_t i2c_addr) : BMP390Sensor(0, i2c_bus, i2c_addr) {}
+BMP390Sensor::BMP390Sensor(TwoWire* i2c_bus, uint8_t i2c_addr)
+    : BMP390Sensor(0, i2c_bus, i2c_addr) {}
 
 /**
  * @brief Construct a new BMP384 Sensor object
  *
  * @param minium_period Minimum time to wait between readings in ms
  */
-BMP390Sensor::BMP390Sensor(unsigned long minium_period, TwoWire* i2c_bus, uint8_t i2c_addr)
+BMP390Sensor::BMP390Sensor(unsigned long minium_period, TwoWire* i2c_bus,
+                           uint8_t i2c_addr)
     : Sensor("BMP390", "BMP TempC,BMP PresPa,BMP Altm", minium_period) {
   this->i2c_bus = i2c_bus;
   if (this->i2c_bus == &Wire1) this->device_name += "_1";

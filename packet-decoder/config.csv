@@ -11,4 +11,3 @@ BitIndex, SensorName, FieldLabel_1, FieldType_1, FieldLabel_2, FieldType_2, Fiel
 9, TMP117_O, Temp_O (C), float
 10, SHTC3_O, Temp (C), float, Rel Hum (%), float
 11, Ozone, Conc (ppb), int16_t
-12, Analog, Reading, int32_t

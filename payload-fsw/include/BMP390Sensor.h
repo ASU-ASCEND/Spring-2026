@@ -17,11 +17,13 @@ class BMP390Sensor : public Sensor {
  private:
   Adafruit_BMP3XX bmp;
   TwoWire* i2c_bus;
-  uint8_t i2c_addr; 
+  uint8_t i2c_addr;
 
  public:
-  BMP390Sensor(TwoWire* i2c_bus = &Wire, uint8_t i2c_addr = BMP390_ALT_I2C_ADDR);
-  BMP390Sensor(unsigned long minium_period, TwoWire* i2c_bus = &Wire, uint8_t i2c_addr = BMP390_ALT_I2C_ADDR);
+  BMP390Sensor(TwoWire* i2c_bus = &Wire,
+               uint8_t i2c_addr = BMP390_ALT_I2C_ADDR);
+  BMP390Sensor(unsigned long minium_period, TwoWire* i2c_bus = &Wire,
+               uint8_t i2c_addr = BMP390_ALT_I2C_ADDR);
 
   bool verify() override;
   String readData() override;

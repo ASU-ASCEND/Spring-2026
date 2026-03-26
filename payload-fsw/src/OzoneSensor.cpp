@@ -14,8 +14,8 @@ OzoneSensor::OzoneSensor(TwoWire* i2c_bus) : OzoneSensor(0, i2c_bus) {}
  */
 OzoneSensor::OzoneSensor(unsigned long minium_period, TwoWire* i2c_bus)
     : Sensor("OzoneSensor", "O3 PPB, ", minium_period), ozone(i2c_bus) {
-      this->i2c_bus = i2c_bus; 
-    }
+  this->i2c_bus = i2c_bus;
+}
 
 /**
  * @brief Tests if the Ozone sensor can be reached
