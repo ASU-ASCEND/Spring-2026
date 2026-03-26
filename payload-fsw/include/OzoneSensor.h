@@ -12,10 +12,11 @@
 class OzoneSensor : public Sensor {
  private:
   DFRobot_OzoneSensor ozone;
+  TwoWire* i2c_bus; 
 
  public:
-  OzoneSensor();
-  OzoneSensor(unsigned long minium_period);
+  OzoneSensor(TwoWire* i2c_bus = &Wire);
+  OzoneSensor(unsigned long minium_period, TwoWire* i2c_bus = &Wire);
 
   bool verify() override;
   String readData() override;

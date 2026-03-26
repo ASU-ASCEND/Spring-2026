@@ -4,6 +4,7 @@
  * peripherals
  */
 #include <Arduino.h>
+#include "hardware/watchdog.h"
 
 // error code framework
 #include "ErrorDisplay.h"
@@ -60,22 +61,24 @@ void real_setup1() {
   }
 
   delay(500);  // wait for other setup to run
+  watchdog_enable(8000, true); 
 }
 
 int it2 = 0;
+uint8_t received_data[QT_ENTRY_SIZE];
 /**
  * @brief Loop for core 1
  *
  */
 void real_loop1() {
-  uint8_t received_data[QT_ENTRY_SIZE];
-
-  // toggle heartbeat
-  it2++;
-  digitalWrite(HEARTBEAT_PIN_1, (it2 & 0x1));
 
   // Block if data is in the queue
   if (queue_get_level(&qt) > 0) {
+    // toggle heartbeat
+    it2++;
+    digitalWrite(HEARTBEAT_PIN_1, (it2 & 0x1));
+    watchdog_update(); 
+
     log_core("it2: " + String(it2));
 
     // Retrieve sensor data from queue

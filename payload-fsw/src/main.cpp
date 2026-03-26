@@ -49,11 +49,11 @@ BME688Sensor    bme688_sensor     (500,   &STRATOCORE_I2C);
 
 // StratoSense
 AS7331Sensor    uv_sensor_out     (500, UV_I2C_ADDR);
-ENS160Sensor    ens160_sensor_out (500,   &STRATOSENSE_I2C, ENS160_ADDRESS_LOW);
+ENS160Sensor    ens160_sensor_out (500,   &STRATOSENSE_I2C, ENS160_ADDRESS_HIGH);
 BMP390Sensor    bmp_sensor_out    (500,   &STRATOSENSE_I2C, BMP390_ALT_I2C_ADDR);
 TMP11xSensor    tmp_sensor_out    (500,   &STRATOSENSE_I2C); 
 SHTC3Sensor     shtc3_sensor_out  (500,   &STRATOSENSE_I2C);
-OzoneSensor     ozone_sensor_out  (500);
+OzoneSensor     ozone_sensor_out  (500,   &STRATOSENSE_I2C);
 // clang-format on
 
 // sensor array
