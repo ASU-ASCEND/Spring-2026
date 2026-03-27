@@ -97,7 +97,7 @@ void SDStorage::storePacket(uint8_t* packet) {
   uint16_t packet_len;
   memcpy(&packet_len, (packet + 8), sizeof(uint16_t));
 
-  output.write(packet, packet_len);
+  if(packet_len < QT_ENTRY_SIZE) output.write(packet, packet_len);
 
   output.close();
 }

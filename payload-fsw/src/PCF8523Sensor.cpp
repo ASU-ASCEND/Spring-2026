@@ -7,6 +7,7 @@ PCF8523Sensor::PCF8523Sensor(unsigned long minimum_period)
 
 bool PCF8523Sensor::verify() {
   if (rtc.begin() == false) return false;
+  // this->rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //2 minutes early
   rtc.start();
   return true;
 }

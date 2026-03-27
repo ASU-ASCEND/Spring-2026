@@ -150,7 +150,7 @@ void loop() {
   digitalWrite(HEARTBEAT_PIN_0, (it & 0x1));
 
   // start print line with iteration number
-  log_core("it: " + String(it) + "\t");
+  log_core_printf("it: %d\n", it);
 
   // build csv row
   uint8_t packet[QT_ENTRY_SIZE];
@@ -158,8 +158,8 @@ void loop() {
   // debugging
   uint16_t packet_len = readSensorDataPacket(packet);
 
-  String data_str = decodePacket(packet);
-  log_core("Data: " + data_str);
+  // String data_str = decodePacket(packet);
+  // log_core("Data: " + data_str);
 
   // print csv row
   // log_data(csv_row);
@@ -232,7 +232,7 @@ uint16_t readSensorDataPacket(uint8_t* packet) {
 
   // calc data len
   packet_len = (temp_packet - packet) + 1;  // + 1 for checksum
-  log_core("Packet Len: " + String(packet_len));
+  log_core_printf("Packet Len: %d\n", packet_len);
 
   // write sensor_id
   temp_packet = packet + sizeof(SYNC_BYTES);
@@ -309,7 +309,7 @@ String decodePacket(uint8_t* packet) {
     sum += packet[i];
   }
   sum += *(int8_t*)(packet + packet_len - 1);
-  log_core("Sum = " + String(sum));
+  log_core_printf("Sum = %d\n", sum);
 
   return csv_row;
 }
