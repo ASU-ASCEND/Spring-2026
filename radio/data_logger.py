@@ -59,5 +59,5 @@ while 1:
 
         timestamp = datetime.now().strftime("%H:%M:%S")
 
-        print(f"{timestamp} -> {line}")
+        print(f"{timestamp} -> {line}", end="")
         f.write(f"{timestamp} -> {line}")
