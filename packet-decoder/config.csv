@@ -4,8 +4,8 @@ BitIndex, SensorName, FieldLabel_1, FieldType_1, FieldLabel_2, FieldType_2, Fiel
 2, PCF8523, Year, uint16_t, Month, uint8_t, Day, uint8_t, Hour, uint8_t, Minute, uint8_t, Second, uint8_t
 3, TMP117, Temp (C), float
 4, BME688, Temp (C), float, Pressure, uint32_t, Rel Hum (%), float, Gas Resistance, uint32_t
-5, UV_Sensor_O, UVA2 (nm), float, UVB2 (nm), float, UVC2 (nm), float
-6, Geiger, CPS, float, Dose (uSv/hr), float
+5, Geiger, CPS, float, Dose (uSv/hr), float
+6, UV_Sensor_O, UVA2 (nm), float, UVB2 (nm), float, UVC2 (nm), float
 7, ENS160_O, AQI, uint8_t, TVOC (ppb), uint16_t, eCO2 (ppm), uint16_t
 8, BMP390_O, Temp (C), double, Pressure (Pa), double, Altitude (m), float
 9, TMP117_O, Temp_O (C), float
