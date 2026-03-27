@@ -55,7 +55,7 @@ print(f"Creating {OUTPUT_FILE}")
 
 while 1:
     with open(OUTPUT_FILE, "a", newline="\n") as f:
-        line = ser.readline().decode("utf-8")
+        line = ser.readline().decode("utf-8", errors="replace")
 
         timestamp = datetime.now().strftime("%H:%M:%S")
 
