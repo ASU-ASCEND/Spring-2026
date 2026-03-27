@@ -1,67 +1,78 @@
-# config_loader.py
 import csv
-from construct import (
-    Struct, Int8ul, Int16ul, Int32ul, Int8sl, Int16sl, Int32sl,
-    Float32l, Float64l
-)
+import struct
+from dataclasses import dataclass
 
-# Define field types
+
 TYPE_KEY = {
-    "uint8_t":  Int8ul,
-    "uint16_t": Int16ul,
-    "uint32_t": Int32ul,
-    "int8_t":   Int8sl,
-    "int16_t":  Int16sl,
-    "int32_t":  Int32sl,
-    "float":    Float32l,
-    "double":   Float64l
+    "uint8_t": "B",
+    "uint16_t": "H",
+    "uint32_t": "I",
+    "int8_t": "b",
+    "int16_t": "h",
+    "int32_t": "i",
+    "float": "f",
+    "double": "d",
 }
 
-# Convert CSV to Construct-readable format
-def load_config(filepath):
-    bitmask_to_struct = {}
-    bitmask_to_name = {}
-    num_sensors = 0
 
-    with open(filepath, 'r', newline='') as f:
-        reader = csv.reader(f)
+@dataclass(frozen=True)
+class SensorField:
+    label: str
+    type_name: str
+    format_char: str
+
+
+@dataclass(frozen=True)
+class SensorDefinition:
+    bit_index: int
+    name: str
+    fields: tuple[SensorField, ...]
+
+    @property
+    def payload_format(self) -> str:
+        return "<" + "".join(field.format_char for field in self.fields)
+
+    @property
+    def payload_size(self) -> int:
+        return struct.calcsize(self.payload_format)
+
+
+def load_config(filepath: str) -> list[SensorDefinition]:
+    sensors: list[SensorDefinition] = []
+
+    with open(filepath, "r", newline="") as config_file:
+        reader = csv.reader(config_file)
         header = next(reader)
-        header = [str(i).strip() for i in header]
+        header = [column.strip() for column in header]
 
-        # Identify columns
-        bit_index   = header.index('BitIndex')
-        sensor_name = header.index('SensorName')
+        bit_index_column = header.index("BitIndex")
+        sensor_name_column = header.index("SensorName")
 
-        # Read CSV row-by-row
         for row in reader:
-            if not row: # Skip empty lines
+            if not row:
                 continue
 
-            # Compartmentalize CSV row data
-            index = int(row[bit_index])
-            name  = row[sensor_name].strip().replace(' ', '_')
-            fields = row[2:] 
+            bit_index = int(row[bit_index_column])
+            name = row[sensor_name_column].strip()
+            field_tokens = [token.strip() for token in row[sensor_name_column + 1 :] if token.strip()]
 
-            # Pair fields two-by-two: (field_label, field_type)
-            it = iter(fields)
-            pairs = list(zip(it, it))
+            fields: list[SensorField] = []
+            for label, type_name in zip(field_tokens[0::2], field_tokens[1::2]):
+                fields.append(
+                    SensorField(
+                        label=label,
+                        type_name=type_name,
+                        format_char=TYPE_KEY[type_name],
+                    )
+                )
 
-            struct_fields = []
-            for (label, type_str) in pairs:
-                # Clean up field & type strings
-                label = label.strip().replace(' ', '_')
-                type_str = type_str.strip()
-                construct_type = TYPE_KEY[type_str]
+            sensors.append(
+                SensorDefinition(
+                    bit_index=bit_index,
+                    name=name,
+                    fields=tuple(fields),
+                )
+            )
 
-                # Adjust format for Construct: "FieldName" / <construct_type>
-                struct_fields.append(label / construct_type)
-
-            # Increment sensor count
-            num_sensors += 1
-
-            # Build Construct struct & store for later use
-            bitmask_to_name[index] = name
-            bitmask_to_struct[index] = Struct(*struct_fields)
-
-
-    return bitmask_to_struct, bitmask_to_name, num_sensors
+    sensors.sort(key=lambda sensor: sensor.bit_index)
+    return sensors

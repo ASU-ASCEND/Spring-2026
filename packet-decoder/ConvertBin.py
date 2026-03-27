@@ -1,179 +1,253 @@
-from construct import (
-    Checksum, ConstError, ChecksumError, ConstructError,
-    Const, Array, Struct,
-    Int32ul, Int16ul, Int8sl,
-    Byte, Bytes, this, Pointer
-)
-from os import path, mkdir
-import re
-from time import sleep 
-from datetime import datetime 
-from tkinter import filedialog as fd 
+import struct
 import sys
-from ConfigLoader import load_config
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable
 
-# Define the path to the configuration file
-FILE_PATH = "./config.csv"
+from ConfigLoader import SensorDefinition, SensorField, load_config
 
-# Load configuration file
-bitmask_to_struct, bitmask_to_name, num_sensors = load_config(FILE_PATH)
+try:
+    from tkinter import filedialog as fd
+except Exception:
+    fd = None
 
-# set up header 
-header_arr = ["Millis"]
-header_key = {
-  "Millis": 1, 
-}
-sensor_arr = []
-sensor_reading_order_key = {}
-with open(FILE_PATH) as f:
-  for line in f: 
-    fields = [str(i).strip() for i in line.split(",")]
-    if fields[0] == "BitIndex": continue 
 
-    # add to header_key 
-    header_key[fields[1]] = len(fields) // 2 - 1 
-    sensor_arr.append(fields[1])
-    sensor_reading_order_key[fields[1]] = [] 
+FILE_PATH = Path(__file__).with_name("config.csv")
+SYNC_BYTES = b"ASU!"
+HEADER_FORMAT = struct.Struct("<4sIHI")
+HEADER_SIZE = HEADER_FORMAT.size
+CHECKSUM_SIZE = 1
+MIN_PACKET_SIZE = HEADER_SIZE + CHECKSUM_SIZE
 
-    # populate header array 
-    for i in range(2, len(fields), 2): 
-      header_arr.append(fields[1] + " " + fields[i]) # spaces are ok (only for display)
-      sensor_reading_order_key[fields[1]].append("_".join(fields[i].split())) # no spaces in actual keys only underscores 
-header_info = (header_key, header_arr, sensor_arr, sensor_reading_order_key)
 
-header_size = 4 + 4 + 2 + 4
-checksum_size = 1
+@dataclass(frozen=True)
+class Packet:
+    offset: int
+    bitmask: int
+    length: int
+    timestamp: int
+    payload: bytes
 
-packet_struct = Struct(
-        "sync"        / Const(b"ASU!"), # Sync byte: b"\x41\x53\x55\x21"
-        "bitmask"     / Int32ul,
-        "length"      / Int16ul,
-        "timestamp"   / Int32ul,
-        "sensor_data" / Array(this.length - header_size - checksum_size, Byte),
-        "checksum"    / Int8sl #Checksum(Byte, self.validate, this)
+
+def build_csv_header(sensors: list[SensorDefinition]) -> list[str]:
+    header = ["Millis"]
+    for sensor in sensors:
+        for field in sensor.fields:
+            header.append(f"{sensor.name} {field.label}")
+    return header
+
+
+def build_legacy_schema(current_sensors: list[SensorDefinition]) -> list[SensorDefinition]:
+    legacy_analog_temp = SensorDefinition(
+        bit_index=len(current_sensors),
+        name="AnalogTemp",
+        fields=(
+            SensorField(
+                label="ADC_Read",
+                type_name="int32_t",
+                format_char="i",
+            ),
+        ),
     )
+    return [*current_sensors, legacy_analog_temp]
 
-# Validate checksum
-def validate(packet: bytearray) -> bool:
-    total = 0
-    for i in range(len(packet)-1):
-      total += int.from_bytes(bytes(packet[i]), byteorder='little', signed=False)
 
-    checksum = int.from_bytes(bytes(packet[-1]), byteorder='little', signed=True)
-    return total + checksum == 0
+def checksum_valid(packet_bytes: bytes) -> bool:
+    return sum(packet_bytes) & 0xFF == 0
+
+
+def resolve_sensor_presence(bitmask: int, sensors: list[SensorDefinition], payload_size: int) -> list[bool]:
+    if bitmask == 0:
+        raise ValueError("bitmask is zero")
+
+    sensor_count = len(sensors)
+    candidates: list[tuple[int, int, list[bool]]] = []
+    highest_bit = bitmask.bit_length() - 1
+
+    for millis_bit in {highest_bit, sensor_count, sensor_count + 1}:
+        if millis_bit <= 0 or not (bitmask & (1 << millis_bit)):
+            continue
+
+        presence: list[bool] = []
+        expected_payload_size = 0
+        for sensor_index, sensor in enumerate(sensors):
+            bit_position = millis_bit - sensor_index - 1
+            is_present = bit_position >= 0 and bool(bitmask & (1 << bit_position))
+            presence.append(is_present)
+            if is_present:
+                expected_payload_size += sensor.payload_size
+
+        if expected_payload_size != payload_size:
+            continue
+
+        ignored_mask = bitmask & ~(((1 << (millis_bit + 1)) - 1) if millis_bit < 31 else 0xFFFFFFFF)
+        ignored_set_bits = ignored_mask.bit_count()
+        candidates.append((ignored_set_bits, abs(millis_bit - highest_bit), presence))
+
+    if not candidates:
+        raise ValueError(
+            f"bitmask 0x{bitmask:08x} does not match payload size {payload_size}"
+        )
+
+    candidates.sort(key=lambda candidate: (candidate[0], candidate[1]))
+    return candidates[0][2]
+
+
+def iter_packets(data: bytes) -> Iterable[Packet]:
+    offset = 0
+    while offset < len(data):
+        sync_offset = data.find(SYNC_BYTES, offset)
+        if sync_offset < 0:
+            break
+
+        if sync_offset + MIN_PACKET_SIZE > len(data):
+            break
+
+        sync, bitmask, packet_length, timestamp = HEADER_FORMAT.unpack_from(data, sync_offset)
+        if sync != SYNC_BYTES or packet_length < MIN_PACKET_SIZE:
+            offset = sync_offset + 1
+            continue
+
+        packet_end = sync_offset + packet_length
+        if packet_end > len(data):
+            offset = sync_offset + 1
+            continue
+
+        packet_bytes = data[sync_offset:packet_end]
+        if not checksum_valid(packet_bytes):
+            offset = sync_offset + 1
+            continue
+
+        payload = packet_bytes[HEADER_SIZE:-CHECKSUM_SIZE]
+        yield Packet(
+            offset=sync_offset,
+            bitmask=bitmask,
+            length=packet_length,
+            timestamp=timestamp,
+            payload=payload,
+        )
+        offset = packet_end
+
+
+def decode_with_schema(
+    payload: bytes,
+    bitmask: int,
+    schema: list[SensorDefinition],
+) -> tuple[list[SensorDefinition], list[str]]:
+    presence = resolve_sensor_presence(bitmask, schema, len(payload))
+
+    values: list[str] = []
+    payload_offset = 0
+
+    for sensor, is_present in zip(schema, presence):
+        if not is_present:
+            values.extend("" for _ in sensor.fields)
+            continue
+
+        sensor_payload = payload[payload_offset : payload_offset + sensor.payload_size]
+        if len(sensor_payload) != sensor.payload_size:
+            raise ValueError(f"truncated payload for {sensor.name}")
+
+        decoded_values = struct.unpack(sensor.payload_format, sensor_payload)
+        values.extend(str(value) for value in decoded_values)
+        payload_offset += sensor.payload_size
+
+    if payload_offset != len(payload):
+        raise ValueError(
+            f"payload decode consumed {payload_offset} bytes, expected {len(payload)}"
+        )
+
+    return schema, values
+
+
+def decode_payload(
+    payload: bytes,
+    bitmask: int,
+    schema_candidates: list[list[SensorDefinition]],
+    output_sensors: list[SensorDefinition],
+) -> list[str]:
+    last_error: ValueError | None = None
+
+    for schema in schema_candidates:
+        try:
+            matched_schema, values = decode_with_schema(payload, bitmask, schema)
+        except ValueError as error:
+            last_error = error
+            continue
+
+        value_by_sensor_name: dict[str, list[str]] = {}
+        field_offset = 0
+        for sensor in matched_schema:
+            field_count = len(sensor.fields)
+            value_by_sensor_name[sensor.name] = values[field_offset : field_offset + field_count]
+            field_offset += field_count
+
+        ordered_values: list[str] = []
+        for sensor in output_sensors:
+            ordered_values.extend(value_by_sensor_name.get(sensor.name, [""] * len(sensor.fields)))
+
+        return ordered_values
+
+    if last_error is None:
+        raise ValueError("no schema candidates were provided")
+    raise last_error
+
 
 def convert_bin(filename: str) -> None:
-  global header_size, checksum_size, bitmask_to_struct, bitmask_to_name, num_sensors, header_info, packet_struct
-  print("Converting " + filename)
-  with open(filename, "rb") as f, open(filename[:-4] + ".csv", "w") as fout: 
+    current_sensors = load_config(str(FILE_PATH))
+    legacy_sensors = build_legacy_schema(current_sensors)
+    output_sensors = legacy_sensors
+    schema_candidates = [current_sensors, legacy_sensors]
+    input_path = Path(filename)
+    output_path = input_path.with_suffix(".csv")
 
-    # add header 
-    fout.write(",".join(header_info[1]) + "\n")
+    packet_count = 0
+    skipped_packets = 0
 
-    buffer = bytearray()
-    while(byte := f.read(1)):
-      buffer.append(byte[0])
+    data = input_path.read_bytes()
+    header = build_csv_header(output_sensors)
 
-      if buffer.find(b"ASU!", 10) > 0: # not if it's the first one 
-        # print("Attempting conversion")
-        # ignore mismatches 
-        if buffer[0:len(b"ASU!")] != b"ASU!": 
-          buffer = buffer[buffer.find(b"ASU!"):]
-        packet_bytes = buffer[0:buffer.find(b"ASU!", len(b"ASU!")+1)]
-        buffer = buffer[buffer.find(b"ASU!", len(b"ASU")+1):]
-        # Parse packet bytes & catch possible errors
-        try:
-          if validate(packet_bytes) == False: raise ChecksumError("Checksum Error")
-          parsed_packet = packet_struct.parse(packet_bytes)
-        except ConstError as e: # Catch sync byte mistmatch
-          print(f"[ERROR] Sync byte mismatch: {e}")
-          continue
-        except ChecksumError as e: # Catch checksum validation errors
-          print(f"[ERROR] Checksum validation failed: {e}")
-          continue
-        except ConstructError as e: # Catch-all for other parse errors
-          print(f"[ERROR] Packet parsing failed: {e}")
-          continue
+    with output_path.open("w", newline="") as csv_file:
+        csv_file.write(",".join(header) + "\n")
 
-        # Extract sensor ID & sensor data
-        bitmask = parsed_packet.bitmask
-        sensor_data = bytes(parsed_packet.sensor_data)
-        timestamp = parsed_packet.timestamp
+        for packet in iter_packets(data):
+            try:
+                row = [
+                    str(packet.timestamp),
+                    *decode_payload(
+                        packet.payload,
+                        packet.bitmask,
+                        schema_candidates=schema_candidates,
+                        output_sensors=output_sensors,
+                    ),
+                ]
+            except ValueError as error:
+                skipped_packets += 1
+                print(f"[WARN] Skipping packet at offset {packet.offset}: {error}")
+                continue
 
-        # print("Mask: ", bin(bitmask))
+            csv_file.write(",".join(row) + "\n")
+            packet_count += 1
 
-        # Parse each sensor data field
-        offset = 0
-        parsed = {}
-        parse_error = False
+    print(f"Converted {input_path} -> {output_path}")
+    print(f"Decoded packets: {packet_count}")
+    if skipped_packets:
+        print(f"Skipped packets: {skipped_packets}")
 
-        for bitmask_index in reversed(range(num_sensors)): # Iterate through each sensor (0 -> num_sensors)
-          if bitmask & (1 << bitmask_index):
-            if bitmask_index not in bitmask_to_struct: # Check if sensor exists
-              print(f"[ERROR] No sensor found for bitmask index: {bitmask_index}")
-              continue
 
-            # Extract sensor data fields & sensor name
-            sensor_fields = bitmask_to_struct[num_sensors - bitmask_index - 1]
-            sensor_name = bitmask_to_name[num_sensors - bitmask_index - 1]
+def main() -> None:
+    if len(sys.argv) > 1:
+        for filepath in sys.argv[1:]:
+            convert_bin(filepath)
+        return
 
-            try: # Parse sensor data fields
-              temp_parsed = sensor_fields.parse(sensor_data[offset:])
-              # print("Temp Parsed:", temp_parsed)
-            except ConstructError as e: # Catch errors in parsing sensor data
-              print(f"[ERROR] Parsing sensor {sensor_name} (bitmask {bitmask_index}) failed: {e}")
-              parse_error = True 
-              break
+    if fd is None:
+        raise SystemExit("No input file provided and tkinter is unavailable.")
 
-            # Store parsed sensor data
-            parsed[sensor_name] = temp_parsed
-            offset += sensor_fields.sizeof()
-
-        if parse_error == False:
-          # print("\tSuccess")
-          packet = {
-              "timestamp": timestamp,
-              "sensor_data": parsed
-          }
-
-          row = [] 
-
-          row.append(str(packet["timestamp"]))
-          for sensor in header_info[0].keys():
-            if sensor == "Millis": continue 
-            if sensor in packet["sensor_data"]:
-              for i in list(packet["sensor_data"][sensor].keys())[1:]:
-                row.append(str(packet["sensor_data"][sensor][i]))
-            else:
-              for i in range(header_info[0][sensor]):
-                row.append("")
-          
-          fout.write(",".join(row) + "\n")
-                
-
-        else: 
-          # print("\tFailure")
-          pass
-  print("Done")
-
-def main():
-  global header_size, checksum_size, bitmask_to_struct, bitmask_to_name, num_sensors, header_info, packet_struct
-
-  print("Loaded config")
-  print("{:<20}{}".format("header_size:", header_size))
-  print("{:<20}{}".format("checksum_size:", checksum_size))
-  print("{:<20}{}".format("num_sensors:", num_sensors))
-  print("Using CSV Header:")
-  print(", ".join(header_info[1]))
-
-  if len(sys.argv) > 1:
-    for filepath in sys.argv[1:]:
-      convert_bin(filepath)
-  else: 
     filepath = fd.askopenfilename()
+    if filepath:
+        convert_bin(filepath)
 
-    convert_bin(filepath)
 
-
-if __name__ == '__main__':
-  main()
+if __name__ == "__main__":
+    main()
