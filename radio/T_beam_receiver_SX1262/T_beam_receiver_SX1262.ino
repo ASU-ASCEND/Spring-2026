@@ -67,7 +67,7 @@ void setup() {
 
   // initialize SX1262 with default settings
   Serial.print(F("[SX1262] Initializing ... "));
-  int state = radio.begin(915.0, 62.5, 10, 7, RADIOLIB_SX126X_SYNC_WORD_PRIVATE, 10, 8, 1.6);
+  int state = radio.begin(920.0, 62.5, 10, 7, RADIOLIB_SX126X_SYNC_WORD_PRIVATE, 10, 8, 1.6);
   if (state == RADIOLIB_ERR_NONE) {
     Serial.println(F("success!"));
   } else {
@@ -104,7 +104,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("looooooop"); 
   // check if the flag is set
   if(receivedFlag) {
     // reset flag
